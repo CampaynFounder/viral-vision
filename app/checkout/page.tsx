@@ -182,10 +182,17 @@ function CheckoutContent() {
           </motion.div>
         ) : (
           <div className="py-4">
+            {/* Instructions Text */}
+            <div className="mb-6 pb-4 border-b border-stone-200">
+              <p className="text-sm font-medium leading-relaxed" style={{ color: '#E8DCC6' }}>
+                Enter your payment details below to complete your purchase. Your payment is secure and encrypted.
+              </p>
+            </div>
+            
             {/* Stripe Elements */}
             <div className="space-y-4 mb-6">
               <div>
-                <label className="body-luxury text-xs text-mocha-light mb-2 block">
+                <label className="body-luxury text-xs text-mocha-dark font-semibold mb-2 block">
                   Card Details
                 </label>
                 <StripeCardElement onCardChange={setCardComplete} />
@@ -211,16 +218,16 @@ function CheckoutContent() {
               disabled={!cardComplete}
               className={`w-full py-4 rounded-xl font-semibold touch-target transition-colors overflow-hidden ${
                 !cardComplete
-                  ? "bg-stone-300 text-stone-700 cursor-not-allowed"
+                  ? "bg-stone-300 text-stone-900 cursor-not-allowed"
                   : "bg-champagne text-white hover:bg-champagne-dark"
               }`}
               style={
                 !cardComplete
-                  ? { backgroundColor: "#D1D5DB", color: "#44403C", maxWidth: '100%' }
-                  : { backgroundColor: "#D4AF37", color: "#FFFFFF", maxWidth: '100%' }
+                  ? { backgroundColor: "#D1D5DB", color: "#1C1917", maxWidth: '100%', fontWeight: '600' }
+                  : { backgroundColor: "#D4AF37", color: "#FFFFFF", maxWidth: '100%', fontWeight: '600' }
               }
             >
-              <span className="truncate block">Complete Purchase</span>
+              <span className="truncate block font-bold">Complete Purchase</span>
             </button>
             <p className="text-xs text-mocha-light text-center mt-4">
               Secure payment powered by Stripe (Phase 2)

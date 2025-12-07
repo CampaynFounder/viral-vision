@@ -42,8 +42,9 @@ export default function StripeProvider({ children }: StripeProviderProps) {
           theme: "stripe",
           variables: {
             colorPrimary: "#D4AF37", // champagne
-            colorBackground: "#FAF9F6", // alabaster
-            colorText: "#6B5A42", // mocha
+            colorBackground: "#FFFFFF", // white for card input
+            colorText: "#1C1917", // Very dark for maximum contrast
+            colorTextSecondary: "#78716C", // stone-500 for placeholders
             colorDanger: "#EF4444",
             fontFamily: "'Montserrat', 'Geist', system-ui, sans-serif",
             borderRadius: "12px",
@@ -51,21 +52,26 @@ export default function StripeProvider({ children }: StripeProviderProps) {
           },
           rules: {
             ".Input": {
-              borderColor: "#E7E5E4", // stone-200
+              borderColor: "#D6D3D1", // stone-300 - darker border
               borderRadius: "12px",
               padding: "12px",
+              backgroundColor: "#FFFFFF",
+              color: "#1C1917", // Very dark text
+              fontSize: "16px",
             },
             ".Input:focus": {
               borderColor: "#D4AF37", // champagne
               boxShadow: "0 0 0 3px rgba(212, 175, 55, 0.1)",
             },
+            ".Input::placeholder": {
+              color: "#78716C", // stone-500 - darker placeholder
+            },
             ".Label": {
               fontFamily: "'Montserrat', 'Geist', system-ui, sans-serif",
               fontSize: "12px",
-              fontWeight: "500",
               textTransform: "uppercase",
               letterSpacing: "0.05em",
-              color: "#8B7355", // mocha-light
+              color: "#57534E", // stone-600 - darker for better contrast
             },
           },
         },

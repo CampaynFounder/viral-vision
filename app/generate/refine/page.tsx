@@ -443,7 +443,36 @@ export default function RefinePage() {
                 label="Negative Prompts"
                 description="What to exclude from the image"
                 type="multi-select"
-                options={["blurry", "low quality", "distorted", "ugly", "text", "watermarks"]}
+                options={[
+                  "blurry",
+                  "low quality",
+                  "distorted",
+                  "ugly",
+                  "text",
+                  "watermarks",
+                  "bad anatomy",
+                  "extra limbs",
+                  "deformed",
+                  "bad proportions",
+                  "cloned face",
+                  "disfigured",
+                  "out of frame",
+                  "bad hands",
+                  "mutation",
+                  "duplicate",
+                  "morbid",
+                  "mutilated",
+                  "extra fingers",
+                  "missing fingers",
+                  "too many fingers",
+                  "cropped",
+                  "worst quality",
+                  "low quality",
+                  "jpeg artifacts",
+                  "signature",
+                  "username",
+                  "artist name",
+                ]}
                 value={wizardData.negativePrompts || []}
                 onChange={(value) => updateWizardData("negativePrompts", value)}
               />

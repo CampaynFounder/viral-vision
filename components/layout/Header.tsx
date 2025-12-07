@@ -148,17 +148,6 @@ export default function Header() {
                 <span className="text-sm text-mocha font-medium">
                   {user.email?.split("@")[0]}
                 </span>
-                <button
-                  onClick={async () => {
-                    hapticLight();
-                    await signOut();
-                    router.push("/");
-                  }}
-                  className="text-xs px-3 py-1.5 bg-stone-200 text-mocha-dark rounded-full touch-target hover:bg-stone-300 transition-colors font-medium"
-                  style={{ backgroundColor: '#E7E5E4', color: '#6B5A42' }}
-                >
-                  Logout
-                </button>
               </div>
             )}
             <CreditCounter
@@ -219,19 +208,6 @@ export default function Header() {
           >
             Profile
           </button>
-          {user && (
-            <button
-              onClick={async () => {
-                hapticLight();
-                await signOut();
-                router.push("/");
-              }}
-              className="body-luxury text-xs px-2 py-1 bg-stone-200 text-mocha-dark rounded-full touch-target font-medium"
-              style={{ backgroundColor: '#E7E5E4', color: '#6B5A42' }}
-            >
-              Logout
-            </button>
-          )}
           <button
             onClick={() => {
               hapticLight();

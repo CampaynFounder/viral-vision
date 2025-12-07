@@ -15,11 +15,11 @@ export default function StripeCardElement({ onCardChange }: StripeCardElementPro
   const cardElementOptions = {
     style: {
       base: {
-        color: "#6B5A42", // mocha
+        color: "#1C1917", // Very dark for maximum contrast
         fontFamily: "'Montserrat', 'Geist', system-ui, sans-serif",
         fontSize: "16px",
         "::placeholder": {
-          color: "#A68B6B", // mocha-light
+          color: "#78716C", // stone-500 - darker for better visibility
         },
       },
       invalid: {
@@ -42,14 +42,14 @@ export default function StripeCardElement({ onCardChange }: StripeCardElementPro
 
   return (
     <div>
-      <div className="p-4 border-2 border-stone-200 rounded-xl bg-white focus-within:border-champagne transition-colors">
+      <div className="p-4 border-2 border-stone-300 rounded-xl bg-white focus-within:border-champagne focus-within:ring-2 focus-within:ring-champagne/20 transition-all shadow-sm">
         <CardElement
           options={cardElementOptions}
           onChange={handleCardChange}
         />
       </div>
       {cardError && (
-        <p className="text-xs text-red-600 mt-2">{cardError}</p>
+        <p className="text-xs text-red-600 mt-2 font-medium">{cardError}</p>
       )}
     </div>
   );
