@@ -1,0 +1,8 @@
+PWA Icon Placeholders
+
+These files (icon-192.png and icon-512.png) are placeholders.
+In production, replace them with actual PNG icons:
+- icon-192.png: 192x192px icon
+- icon-512.png: 512x512px icon
+
+Icons should use the Champagne (#D4AF37) color scheme and match the luxury aesthetic.

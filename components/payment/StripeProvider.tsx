@@ -1,0 +1,78 @@
+"use client";
+
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import { ReactNode } from "react";
+
+// For Phase 1, Stripe Elements will work in test mode even without a key
+// In Phase 2, this will come from environment variables
+// Note: Stripe Elements requires a valid publishable key to function properly
+// For now, we'll use a placeholder that allows the UI to render
+const getStripeKey = () => {
+  if (typeof window === "undefined") return null;
+  return process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || null;
+};
+
+const stripePromise = getStripeKey() ? loadStripe(getStripeKey()!) : null;
+
+interface StripeProviderProps {
+  children: ReactNode;
+}
+
+export default function StripeProvider({ children }: StripeProviderProps) {
+  // If Stripe key is not configured, show a message
+  if (!stripePromise) {
+    return (
+      <div className="py-4">
+        <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl mb-4">
+          <p className="text-sm text-yellow-800">
+            Stripe is not configured yet. Please set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY in your environment variables.
+          </p>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <Elements
+      stripe={stripePromise}
+      options={{
+        appearance: {
+          theme: "stripe",
+          variables: {
+            colorPrimary: "#D4AF37", // champagne
+            colorBackground: "#FAF9F6", // alabaster
+            colorText: "#6B5A42", // mocha
+            colorDanger: "#EF4444",
+            fontFamily: "'Montserrat', 'Geist', system-ui, sans-serif",
+            borderRadius: "12px",
+            spacingUnit: "4px",
+          },
+          rules: {
+            ".Input": {
+              borderColor: "#E7E5E4", // stone-200
+              borderRadius: "12px",
+              padding: "12px",
+            },
+            ".Input:focus": {
+              borderColor: "#D4AF37", // champagne
+              boxShadow: "0 0 0 3px rgba(212, 175, 55, 0.1)",
+            },
+            ".Label": {
+              fontFamily: "'Montserrat', 'Geist', system-ui, sans-serif",
+              fontSize: "12px",
+              fontWeight: "500",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: "#8B7355", // mocha-light
+            },
+          },
+        },
+      }}
+    >
+      {children}
+    </Elements>
+  );
+}
+
