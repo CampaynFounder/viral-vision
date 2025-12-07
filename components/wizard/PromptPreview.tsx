@@ -27,11 +27,11 @@ export default function PromptPreview({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white rounded-2xl p-6 border-2 border-stone-200 ${className}`}
+      className={`bg-white rounded-2xl p-4 sm:p-6 border-2 border-stone-200 ${className}`}
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
         <div>
-          <h3 className="heading-luxury text-lg text-mocha mb-1">
+          <h3 className="heading-luxury text-base sm:text-lg text-mocha mb-1">
             Prompt Preview
           </h3>
           <p className="text-xs text-mocha-light">
@@ -42,7 +42,7 @@ export default function PromptPreview({
         </div>
         <button
           onClick={handleCopy}
-          className="px-4 py-2 bg-champagne text-white rounded-xl text-sm font-medium touch-target hover:bg-champagne-dark transition-colors"
+          className="px-4 py-2.5 sm:py-2 bg-champagne text-white rounded-xl text-sm font-medium touch-target min-h-[44px] hover:bg-champagne-dark transition-colors self-start sm:self-auto"
           style={{ backgroundColor: "#D4AF37", color: "#FFFFFF" }}
         >
           {copied ? "✓ Copied" : "Copy"}

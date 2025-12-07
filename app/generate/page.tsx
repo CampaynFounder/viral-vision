@@ -42,7 +42,7 @@ export default function GeneratePage() {
   const [credits, setCredits] = useState(50);
   const [showTopUp, setShowTopUp] = useState(false);
 
-  // Load credits from localStorage
+  // Load credits and generation count from localStorage
   useEffect(() => {
     const stored = localStorage.getItem("credits");
     const subscription = localStorage.getItem("subscription");
@@ -51,8 +51,14 @@ export default function GeneratePage() {
     } else if (stored) {
       setCredits(parseInt(stored, 10));
     } else {
-      // First time user - show demo mode
-      setCredits(0);
+      // New user - start with 50 free credits
+      setCredits(50);
+      localStorage.setItem("credits", "50");
+    }
+
+    // Initialize generation count if not exists
+    if (!localStorage.getItem("totalGenerations")) {
+      localStorage.setItem("totalGenerations", "0");
     }
   }, []);
 
@@ -65,7 +71,8 @@ export default function GeneratePage() {
   const handleManifest = async () => {
     if (!userInput.trim()) return;
 
-    // Check credits - allow demo mode if no credits
+    // Note: Credit deduction happens on refine page after user makes selections
+    // This page just checks if they have any credits at all
     const hasCredits = credits > 0 || credits === Infinity;
     if (!hasCredits) {
       // Demo mode - allow 3 free generations
@@ -75,16 +82,6 @@ export default function GeneratePage() {
         return;
       }
       localStorage.setItem("demoCount", (demoCount + 1).toString());
-    } else {
-      // Deduct credit (mock)
-      if (credits !== Infinity) {
-        const newCredits = credits - 1;
-        setCredits(newCredits);
-        localStorage.setItem("credits", newCredits.toString());
-        if (newCredits === 0) {
-          setShowTopUp(true);
-        }
-      }
     }
 
     hapticMedium();

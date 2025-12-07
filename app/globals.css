@@ -98,6 +98,31 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  
+  /* Button text overflow prevention */
+  button {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  
+  /* Allow multi-line for specific buttons if needed */
+  button.allow-wrap {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Ensure button text doesn't overflow */
+  button > span,
+  button > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    display: block;
+  }
 }
 
 /* Typography utilities */

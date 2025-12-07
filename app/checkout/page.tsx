@@ -67,10 +67,10 @@ function CheckoutContent() {
             <motion.div
               key={tier.id}
               whileHover={{ scale: 1.02 }}
-              className={`p-6 rounded-2xl border-2 ${
+              className={`p-6 rounded-2xl border-2 transition-all ${
                 tier.id === selectedTier.id
-                  ? "border-champagne bg-champagne/5"
-                  : "border-stone-200 bg-white"
+                  ? "border-champagne bg-champagne/10 shadow-lg shadow-champagne/20"
+                  : "border-stone-200 bg-white hover:border-stone-300"
               } ${tier.popular ? "ring-2 ring-champagne" : ""}`}
             >
               {tier.popular && (
@@ -82,13 +82,19 @@ function CheckoutContent() {
               )}
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="heading-luxury text-2xl text-mocha mb-2">
+                  <h3 className={`heading-luxury text-2xl mb-2 ${
+                    tier.id === selectedTier.id ? "text-mocha-dark" : "text-mocha"
+                  }`}>
                     {tier.name}
                   </h3>
-                  <p className="text-3xl font-bold text-champagne mb-2">
+                  <p className={`text-3xl font-bold mb-2 ${
+                    tier.id === selectedTier.id ? "text-champagne-dark" : "text-champagne"
+                  }`}>
                     {tier.priceDisplay}
                   </p>
-                  <p className="text-mocha-light text-sm">
+                  <p className={`text-sm ${
+                    tier.id === selectedTier.id ? "text-mocha" : "text-mocha-light"
+                  }`}>
                     {tier.credits === "unlimited"
                       ? "Unlimited credits"
                       : `${tier.credits} credits`}
@@ -97,8 +103,12 @@ function CheckoutContent() {
               </div>
               <ul className="space-y-2 mb-4">
                 {tier.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-mocha text-sm">
-                    <span className="text-champagne mt-1">✓</span>
+                  <li key={idx} className={`flex items-start gap-2 text-sm ${
+                    tier.id === selectedTier.id ? "text-mocha-dark" : "text-mocha"
+                  }`}>
+                    <span className={`mt-1 ${
+                      tier.id === selectedTier.id ? "text-champagne-dark" : "text-champagne"
+                    }`}>✓</span>
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -108,18 +118,18 @@ function CheckoutContent() {
                   setSelectedTier(tier);
                   handleCheckout();
                 }}
-                className={`w-full py-3 rounded-xl font-semibold touch-target transition-all ${
+                className={`w-full py-3 rounded-xl font-semibold touch-target transition-colors overflow-hidden ${
                   tier.id === selectedTier.id
-                    ? "bg-champagne text-white hover:bg-champagne-dark shadow-md"
-                    : "bg-stone-300 text-mocha-dark hover:bg-stone-400 hover:text-mocha border-2 border-stone-400 shadow-sm"
+                    ? "bg-champagne-dark text-white hover:bg-champagne shadow-md"
+                    : "bg-champagne text-white hover:bg-champagne-dark"
                 }`}
                 style={
                   tier.id === selectedTier.id
-                    ? { color: '#FFFFFF', backgroundColor: '#D4AF37' }
-                    : { color: '#6B5A42', backgroundColor: '#D1D5DB' }
+                    ? { backgroundColor: '#B8941F', color: '#FFFFFF', maxWidth: '100%' }
+                    : { backgroundColor: '#D4AF37', color: '#FFFFFF', maxWidth: '100%' }
                 }
               >
-                {tier.cta}
+                <span className="truncate block">{tier.cta}</span>
               </button>
             </motion.div>
           ))}
@@ -199,18 +209,18 @@ function CheckoutContent() {
             <button
               onClick={handlePaymentSubmit}
               disabled={!cardComplete}
-              className={`w-full py-4 rounded-xl font-semibold touch-target transition-colors ${
+              className={`w-full py-4 rounded-xl font-semibold touch-target transition-colors overflow-hidden ${
                 !cardComplete
                   ? "bg-stone-300 text-stone-700 cursor-not-allowed"
                   : "bg-champagne text-white hover:bg-champagne-dark"
               }`}
               style={
                 !cardComplete
-                  ? { backgroundColor: "#D1D5DB", color: "#44403C" }
-                  : { backgroundColor: "#D4AF37", color: "#FFFFFF" }
+                  ? { backgroundColor: "#D1D5DB", color: "#44403C", maxWidth: '100%' }
+                  : { backgroundColor: "#D4AF37", color: "#FFFFFF", maxWidth: '100%' }
               }
             >
-              Complete Purchase
+              <span className="truncate block">Complete Purchase</span>
             </button>
             <p className="text-xs text-mocha-light text-center mt-4">
               Secure payment powered by Stripe (Phase 2)

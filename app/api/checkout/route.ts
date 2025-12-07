@@ -12,10 +12,10 @@ export async function POST(request: NextRequest) {
 
     // TODO: Phase 2 Implementation
     // 1. Initialize Stripe with secret key
-    // 2. Map productId to Stripe Price ID
-    //    - viral-starter: $27 one-time
-    //    - ceo-access: $47/month subscription
-    //    - empire-bundle: $97 one-time
+    // 2. Map productId to Stripe Product ID
+    //    - viral-starter: prod_TYymxRiya4jfkz ($27 one-time)
+    //    - ceo-access: prod_TYyngo3p8KjIBO ($47/month subscription)
+    //    - empire-bundle: prod_TYyocVtHUmSpis ($97 one-time)
     // 3. Create checkout session with success/cancel URLs
     // 4. Return session URL for redirect
 

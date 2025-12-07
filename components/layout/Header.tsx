@@ -22,7 +22,27 @@ export default function Header() {
       setIsUnlimited(true);
     } else if (stored) {
       setCredits(parseInt(stored, 10));
+    } else {
+      // New user - default to 50 credits
+      setCredits(50);
     }
+    
+    // Listen for credit updates (when user navigates between pages)
+    const handleStorageChange = () => {
+      const updated = localStorage.getItem("credits");
+      if (updated) {
+        setCredits(parseInt(updated, 10));
+      }
+    };
+    
+    window.addEventListener("storage", handleStorageChange);
+    // Also check on focus (for same-tab updates)
+    window.addEventListener("focus", handleStorageChange);
+    
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", handleStorageChange);
+    };
   }, [pathname]); // Re-check when route changes
 
   const isHome = pathname === "/";
@@ -94,11 +114,30 @@ export default function Header() {
             <button
               onClick={() => {
                 hapticLight();
+                router.push("/profile");
+              }}
+              className={`body-luxury text-sm touch-target transition-colors font-medium ${
+                pathname === "/profile"
+                  ? "text-champagne font-semibold"
+                  : "text-mocha hover:text-champagne"
+              }`}
+              style={
+                pathname === "/profile"
+                  ? { color: '#D4AF37' }
+                  : { color: '#6B5A42' }
+              }
+            >
+              Profile
+            </button>
+            <button
+              onClick={() => {
+                hapticLight();
                 router.push("/checkout");
               }}
-              className="body-luxury text-sm px-4 py-2 bg-champagne text-white rounded-full touch-target hover:bg-champagne-dark transition-colors"
+              className="body-luxury text-sm px-4 py-2 bg-champagne text-white rounded-full touch-target hover:bg-champagne-dark transition-colors overflow-hidden"
+              style={{ backgroundColor: '#D4AF37', color: '#FFFFFF', maxWidth: '100%' }}
             >
-              Upgrade
+              <span className="truncate block">Upgrade</span>
             </button>
           </nav>
 
@@ -106,7 +145,7 @@ export default function Header() {
           <div className="flex items-center gap-4">
             {user && (
               <div className="hidden sm:flex items-center gap-3">
-                <span className="text-sm text-mocha-light">
+                <span className="text-sm text-mocha font-medium">
                   {user.email?.split("@")[0]}
                 </span>
                 <button
@@ -115,9 +154,10 @@ export default function Header() {
                     await signOut();
                     router.push("/");
                   }}
-                  className="text-xs text-mocha-light hover:text-mocha touch-target"
+                  className="text-xs px-3 py-1.5 bg-stone-200 text-mocha-dark rounded-full touch-target hover:bg-stone-300 transition-colors font-medium"
+                  style={{ backgroundColor: '#E7E5E4', color: '#6B5A42' }}
                 >
-                  Sign Out
+                  Logout
                 </button>
               </div>
             )}
@@ -136,9 +176,14 @@ export default function Header() {
               hapticLight();
               router.push("/generate");
             }}
-            className={`body-luxury text-xs touch-target ${
+            className={`body-luxury text-xs touch-target font-medium ${
               pathname.startsWith("/generate") ? "text-champagne" : "text-mocha"
             }`}
+            style={
+              pathname.startsWith("/generate")
+                ? { color: '#D4AF37' }
+                : { color: '#6B5A42' }
+            }
           >
             Generate
           </button>
@@ -147,18 +192,53 @@ export default function Header() {
               hapticLight();
               router.push("/portfolio");
             }}
-            className={`body-luxury text-xs touch-target ${
+            className={`body-luxury text-xs touch-target font-medium ${
               pathname === "/portfolio" ? "text-champagne" : "text-mocha"
             }`}
+            style={
+              pathname === "/portfolio"
+                ? { color: '#D4AF37' }
+                : { color: '#6B5A42' }
+            }
           >
             Portfolio
           </button>
           <button
             onClick={() => {
               hapticLight();
+              router.push("/profile");
+            }}
+            className={`body-luxury text-xs touch-target font-medium ${
+              pathname === "/profile" ? "text-champagne" : "text-mocha"
+            }`}
+            style={
+              pathname === "/profile"
+                ? { color: '#D4AF37' }
+                : { color: '#6B5A42' }
+            }
+          >
+            Profile
+          </button>
+          {user && (
+            <button
+              onClick={async () => {
+                hapticLight();
+                await signOut();
+                router.push("/");
+              }}
+              className="body-luxury text-xs px-2 py-1 bg-stone-200 text-mocha-dark rounded-full touch-target font-medium"
+              style={{ backgroundColor: '#E7E5E4', color: '#6B5A42' }}
+            >
+              Logout
+            </button>
+          )}
+          <button
+            onClick={() => {
+              hapticLight();
               router.push("/checkout");
             }}
             className="body-luxury text-xs px-3 py-1.5 bg-champagne text-white rounded-full touch-target"
+            style={{ backgroundColor: '#D4AF37', color: '#FFFFFF' }}
           >
             Upgrade
           </button>

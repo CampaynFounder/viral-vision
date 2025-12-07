@@ -25,10 +25,24 @@ export default function ResultPage() {
 
     const parsed = JSON.parse(data);
 
-    // Check if we have enhanced formatted prompt from wizard
-    if (parsed.formattedPrompt) {
+    // Check if we have OpenAI-generated prompt
+    if (parsed.openaiPrompt) {
+      setPrompt(parsed.openaiPrompt);
+      setHooks(parsed.openaiHooks || []);
+      setAudio(parsed.openaiAudio || "");
+    } else if (parsed.formattedPrompt) {
+      // Check if we have enhanced formatted prompt from wizard
       setFormattedPrompt(parsed.formattedPrompt);
       setPrompt(parsed.formattedPrompt.fullPrompt || parsed.formattedPrompt.positive);
+      
+      // Generate hooks (using the prompt text)
+      const promptText = parsed.formattedPrompt.fullPrompt || parsed.formattedPrompt.positive;
+      const generatedHooks = generateViralHooks(promptText);
+      setHooks(generatedHooks);
+
+      // Generate audio suggestion
+      const generatedAudio = generateAudioSuggestion(promptText);
+      setAudio(generatedAudio);
     } else {
       // Fallback to legacy prompt generation
       const input: PromptGenerationInput = {
@@ -42,28 +56,27 @@ export default function ResultPage() {
       // Generate prompt
       const generatedPrompt = generatePrompt(input);
       setPrompt(generatedPrompt);
+      
+      // Generate hooks (using the prompt text)
+      const generatedHooks = generateViralHooks(generatedPrompt);
+      setHooks(generatedHooks);
+
+      // Generate audio suggestion
+      const generatedAudio = generateAudioSuggestion(generatedPrompt);
+      setAudio(generatedAudio);
     }
-
-    // Generate hooks (using the prompt text)
-    const promptText = formattedPrompt?.fullPrompt || prompt || parsed.input;
-    const generatedHooks = generateViralHooks(promptText);
-    setHooks(generatedHooks);
-
-    // Generate audio suggestion
-    const generatedAudio = generateAudioSuggestion(promptText);
-    setAudio(generatedAudio);
 
     // Save to history (localStorage for now)
     const history = JSON.parse(localStorage.getItem("promptHistory") || "[]");
     history.unshift({
-      prompt: formattedPrompt?.fullPrompt || prompt,
-      hooks: generatedHooks,
-      audio: generatedAudio,
+      prompt: parsed.openaiPrompt || formattedPrompt?.fullPrompt || prompt,
+      hooks: parsed.openaiHooks || hooks,
+      audio: parsed.openaiAudio || audio,
       timestamp: new Date().toISOString(),
       formattedPrompt: formattedPrompt || undefined,
     });
     localStorage.setItem("promptHistory", JSON.stringify(history.slice(0, 50))); // Keep last 50
-  }, [router, prompt, formattedPrompt]);
+  }, [router, prompt, formattedPrompt, hooks, audio]);
 
   return (
     <div className="min-h-screen bg-alabaster p-6 pb-24">

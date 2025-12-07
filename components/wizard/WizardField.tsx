@@ -74,7 +74,7 @@ export default function WizardField({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleSelect(suggestion)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium touch-target transition-all ${
+                className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium touch-target transition-all min-h-[36px] flex items-center ${
                   isSelected
                     ? "bg-champagne text-white"
                     : "bg-white text-mocha-dark border border-stone-200"
@@ -110,8 +110,8 @@ export default function WizardField({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               placeholder={placeholder}
-              className={`w-full min-h-[100px] p-4 border-2 border-stone-200 rounded-xl bg-white focus:outline-none focus:border-champagne transition-colors ${
-                icon ? "pl-12" : ""
+              className={`w-full min-h-[100px] p-3 sm:p-4 text-sm sm:text-base border-2 border-stone-200 rounded-xl bg-white focus:outline-none focus:border-champagne transition-colors ${
+                icon ? "pl-10 sm:pl-12" : ""
               }`}
             />
           ) : (
@@ -122,14 +122,14 @@ export default function WizardField({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               placeholder={placeholder}
-              className={`w-full p-4 border-2 border-stone-200 rounded-xl bg-white focus:outline-none focus:border-champagne transition-colors ${
-                icon ? "pl-12" : ""
+              className={`w-full p-3 sm:p-4 text-sm sm:text-base min-h-[44px] border-2 border-stone-200 rounded-xl bg-white focus:outline-none focus:border-champagne transition-colors ${
+                icon ? "pl-10 sm:pl-12" : ""
               }`}
             />
           )}
         </motion.div>
       ) : type === "select" && options ? (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2">
           {options.map((option) => {
             const isSelected = value === option;
             return (
@@ -138,7 +138,7 @@ export default function WizardField({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleSelect(option)}
-                className={`p-4 rounded-xl border-2 transition-all text-left ${
+                className={`p-3 sm:p-4 rounded-xl border-2 transition-all text-left min-h-[44px] flex items-center ${
                   isSelected
                     ? "border-champagne bg-champagne/10"
                     : "border-stone-200 bg-white hover:border-champagne/50"
@@ -150,7 +150,7 @@ export default function WizardField({
                 }
               >
                 <span
-                  className="text-sm font-medium"
+                  className="text-sm sm:text-base font-medium"
                   style={{ color: isSelected ? "#B8941F" : "#6B5A42" }}
                 >
                   {option}

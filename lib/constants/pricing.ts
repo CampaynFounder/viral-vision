@@ -10,6 +10,7 @@ export interface PricingTier {
   features: string[];
   cta: string;
   popular?: boolean;
+  stripeProductId?: string; // Stripe product ID
 }
 
 export const pricingTiers: PricingTier[] = [
@@ -26,6 +27,7 @@ export const pricingTiers: PricingTier[] = [
       "Commercial rights included",
     ],
     cta: "Get the 50-Prompt Vault",
+    stripeProductId: "prod_TYymxRiya4jfkz",
   },
   {
     id: "ceo-access",
@@ -42,6 +44,7 @@ export const pricingTiers: PricingTier[] = [
     ],
     cta: "Unlock CEO Access",
     popular: true,
+    stripeProductId: "prod_TYyngo3p8KjIBO",
   },
   {
     id: "empire-bundle",
@@ -57,6 +60,7 @@ export const pricingTiers: PricingTier[] = [
       "Lifetime access to The Vault",
     ],
     cta: "Unlock the Empire",
+    stripeProductId: "prod_TYyocVtHUmSpis",
   },
 ];
 

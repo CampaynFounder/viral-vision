@@ -25,6 +25,14 @@ export default function AuthPage() {
     hapticMedium();
 
     try {
+      // Verify Supabase is configured
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder')) {
+        throw new Error('Supabase is not configured. Please check environment variables.');
+      }
+
       if (mode === "signup") {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -34,7 +42,10 @@ export default function AuthPage() {
           },
         });
 
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error('Sign up error:', signUpError);
+          throw signUpError;
+        }
 
         if (data.user) {
           setMessage(
@@ -47,14 +58,38 @@ export default function AuthPage() {
           password,
         });
 
-        if (signInError) throw signInError;
+        if (signInError) {
+          console.error('Sign in error:', signInError);
+          throw signInError;
+        }
 
         if (data.user) {
           router.push("/generate");
         }
       }
     } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
+      console.error('Auth error:', err);
+      // Show more detailed error messages
+      let errorMessage = "Something went wrong. Please try again.";
+      
+      if (err.message) {
+        errorMessage = err.message;
+      } else if (err.error_description) {
+        errorMessage = err.error_description;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      // Common error messages
+      if (errorMessage.includes('Invalid API key') || errorMessage.includes('401')) {
+        errorMessage = 'Authentication failed. Please check Supabase configuration.';
+      } else if (errorMessage.includes('Email rate limit')) {
+        errorMessage = 'Too many sign up attempts. Please wait a few minutes.';
+      } else if (errorMessage.includes('User already registered')) {
+        errorMessage = 'This email is already registered. Please sign in instead.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
