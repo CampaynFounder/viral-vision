@@ -5,11 +5,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-interface PageProps {
-  params: {
-    slug: string;
-  };
-}
+export const runtime = 'edge';
 
 // Phase 2: This will fetch from Supabase
 interface Recipe {
@@ -24,8 +20,13 @@ async function getRecipe(slug: string): Promise<Recipe | null> {
   return null;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const recipe = await getRecipe(params.slug);
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const recipe = await getRecipe(slug);
 
   if (!recipe) {
     return {
@@ -44,8 +45,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function RecipePage({ params }: PageProps) {
-  const recipe = await getRecipe(params.slug);
+export default async function RecipePage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  const { slug } = await params;
+  const recipe = await getRecipe(slug);
 
   if (!recipe) {
     notFound();
@@ -68,10 +74,7 @@ export default async function RecipePage({ params }: PageProps) {
   );
 }
 
-// Phase 2: Generate static paths for SEO
-export async function generateStaticParams() {
-  // TODO: Fetch all public prompts from Supabase
-  // Return array of slugs for static generation
-  return [];
-}
+// Note: generateStaticParams removed for Cloudflare compatibility
+// Cloudflare adapter requires edge runtime for dynamic routes
+// Phase 2: We'll implement static generation differently if needed
 

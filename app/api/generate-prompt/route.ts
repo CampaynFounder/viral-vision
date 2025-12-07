@@ -3,6 +3,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
   try {
     // Phase 2: Replace with actual OpenAI API call
