@@ -54,7 +54,7 @@ export default function Home() {
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 hapticMedium();
-                router.push("/generate");
+                router.push("/auth");
               }}
               className="px-12 py-4 bg-white border-2 border-champagne text-champagne-dark rounded-2xl font-semibold text-lg touch-target hover:bg-champagne/10 hover:border-champagne-dark transition-colors shadow-md"
             >

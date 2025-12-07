@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import LayoutClient from "./layout-client";
 import Header from "@/components/layout/Header";
+import { AuthProvider } from "@/lib/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "Viral Vision - Generate Viral Faceless Content Prompts",
@@ -30,10 +31,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="h-full antialiased">
-        <LayoutClient>
-          <Header />
-          {children}
-        </LayoutClient>
+        <AuthProvider>
+          <LayoutClient>
+            <Header />
+            {children}
+          </LayoutClient>
+        </AuthProvider>
       </body>
     </html>
   );

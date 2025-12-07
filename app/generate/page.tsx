@@ -10,9 +10,32 @@ import { motion } from "framer-motion";
 import { hapticMedium } from "@/lib/utils/haptics";
 import TextShuffler from "@/components/ui/TextShuffler";
 import { loadingTexts } from "@/lib/utils/text-shuffler";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 export default function GeneratePage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/auth");
+    }
+  }, [user, authLoading, router]);
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-alabaster flex items-center justify-center">
+        <div className="text-mocha">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
   const [userInput, setUserInput] = useState("");
   const [facelessMode, setFacelessMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);

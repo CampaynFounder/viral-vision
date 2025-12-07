@@ -5,10 +5,12 @@ import { motion } from "framer-motion";
 import { hapticLight } from "@/lib/utils/haptics";
 import CreditCounter from "@/components/ui/CreditCounter";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
   const [credits, setCredits] = useState(50);
   const [isUnlimited, setIsUnlimited] = useState(false);
 
@@ -25,9 +27,10 @@ export default function Header() {
 
   const isHome = pathname === "/";
   const isCheckout = pathname === "/checkout";
+  const isAuth = pathname === "/auth";
 
-  if (isHome || isCheckout) {
-    return null; // Don't show header on landing or checkout
+  if (isHome || isCheckout || isAuth) {
+    return null; // Don't show header on landing, checkout, or auth
   }
 
   return (
@@ -99,12 +102,31 @@ export default function Header() {
             </button>
           </nav>
 
-          {/* Credits */}
-          <CreditCounter
-            credits={credits}
-            isUnlimited={isUnlimited}
-            className="sm:ml-4"
-          />
+          {/* User Info & Credits */}
+          <div className="flex items-center gap-4">
+            {user && (
+              <div className="hidden sm:flex items-center gap-3">
+                <span className="text-sm text-mocha-light">
+                  {user.email?.split("@")[0]}
+                </span>
+                <button
+                  onClick={async () => {
+                    hapticLight();
+                    await signOut();
+                    router.push("/");
+                  }}
+                  className="text-xs text-mocha-light hover:text-mocha touch-target"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+            <CreditCounter
+              credits={credits}
+              isUnlimited={isUnlimited}
+              className="sm:ml-4"
+            />
+          </div>
         </div>
 
         {/* Mobile Navigation */}
