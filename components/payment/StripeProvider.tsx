@@ -27,6 +27,7 @@ interface StripeProviderProps {
 
 export default function StripeProvider({ children }: StripeProviderProps) {
   // If Stripe key is not configured, show a message
+  // But still wrap in Elements with null stripe to prevent hook errors
   if (!stripePromise) {
     return (
       <div className="py-4">
@@ -35,7 +36,9 @@ export default function StripeProvider({ children }: StripeProviderProps) {
             Stripe is not configured yet. Please set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY in your environment variables.
           </p>
         </div>
-        {children}
+        <Elements stripe={null}>
+          {children}
+        </Elements>
       </div>
     );
   }

@@ -17,6 +17,18 @@ function CheckoutContent() {
   const stripe = useStripe();
   const elements = useElements();
   const { user } = useAuth();
+  
+  // Guard against Stripe not being loaded
+  if (!stripe || !elements) {
+    return (
+      <div className="min-h-screen bg-alabaster p-6 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-mocha mb-4">Loading payment system...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-champagne mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
   const productId = searchParams.get("product") || "viral-starter";
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -141,8 +153,7 @@ function CheckoutContent() {
   if (!selectedTier) return null;
 
   return (
-    <StripeProvider>
-      <div className="min-h-screen bg-alabaster p-6">
+    <div className="min-h-screen bg-alabaster p-6">
         <div className="max-w-2xl mx-auto">
           <h1 className="heading-luxury text-3xl text-mocha mb-8">
             Choose Your Access
@@ -331,19 +342,20 @@ function CheckoutContent() {
         )}
       </BottomSheet>
     </div>
-    </StripeProvider>
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-alabaster p-6 flex items-center justify-center">
-        <div className="text-mocha">Loading...</div>
-      </div>
-    }>
-      <CheckoutContent />
-    </Suspense>
+    <StripeProvider>
+      <Suspense fallback={
+        <div className="min-h-screen bg-alabaster p-6 flex items-center justify-center">
+          <div className="text-mocha">Loading...</div>
+        </div>
+      }>
+        <CheckoutContent />
+      </Suspense>
+    </StripeProvider>
   );
 }
 
