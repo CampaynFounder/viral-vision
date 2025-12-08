@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { hapticMedium, hapticLight } from "@/lib/utils/haptics";
 import WizardField from "@/components/wizard/WizardField";
 import FirstTimeBonusModal from "@/components/ui/FirstTimeBonusModal";
-import { isEligibleForFirstTimeBonus, grantFirstTimeBonus, hasReceivedFirstTimeBonus } from "@/lib/utils/credits-manager";
 import ValidationPanel from "@/components/wizard/ValidationPanel";
 import { PromptWizardData, ModelType } from "@/lib/types/prompt-wizard";
 import { generateEnhancedPrompt } from "@/lib/utils/prompt-engine-v2";

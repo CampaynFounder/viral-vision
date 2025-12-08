@@ -6,9 +6,31 @@ import { AuthProvider } from "@/lib/contexts/AuthContext";
 import SessionTimeoutProvider from "@/components/providers/SessionTimeoutProvider";
 
 export const metadata: Metadata = {
-  title: "VVS Prompts: Soft Life Software for the Hyper-Realistic AI Influencer",
-  description: "Generate and Monetize Viral luxury content prompts with Modern Luxury aesthetics - No Guesswork.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://vvsprompts.com"),
+  title: "Soft Life Software to get the Hyper Realistic AI Influencer bag.",
+  description: "Stop Guessing. Start Posting. Generate viral luxury content prompts with Black Luxury aesthetics.",
   manifest: "/manifest.json",
+  openGraph: {
+    title: "Soft Life Software to get the Hyper Realistic AI Influencer bag.",
+    description: "Stop Guessing. Start Posting. Generate viral luxury content prompts with Black Luxury aesthetics.",
+    type: "website",
+    url: "https://vvsprompts.com",
+    siteName: "VVS Prompts",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "VVS Prompts - Very Very Sophisticated Prompts",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Soft Life Software to get the Hyper Realistic AI Influencer bag.",
+    description: "Stop Guessing. Start Posting. Generate viral luxury content prompts with Black Luxury aesthetics.",
+    images: ["/og-image.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
