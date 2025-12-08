@@ -98,10 +98,11 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON public.subscriptions(use
 CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON public.subscriptions(status);
 
 -- ============================================
--- 3. USERS TABLE (Optional - only if needed)
+-- 3. USERS TABLE
 -- ============================================
--- Optional table to store additional user data
--- Only create if you need to extend auth.users with additional fields
+-- Table to store additional user data (extends auth.users)
+-- Note: This is optional - the app works with just auth.users
+-- But some features may benefit from having this table
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   email TEXT,
@@ -127,6 +128,21 @@ BEGIN
   END IF;
 END $$;
 
+-- Policy: Users can update their own data
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public' 
+      AND tablename = 'users' 
+      AND policyname = 'Users can update own data'
+  ) THEN
+    CREATE POLICY "Users can update own data"
+      ON public.users FOR UPDATE
+      USING (auth.uid() = id);
+  END IF;
+END $$;
+
 -- ============================================
 -- VERIFICATION
 -- ============================================
@@ -142,6 +158,13 @@ UNION ALL
 SELECT 
   'subscriptions' as table_name,
   CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'subscriptions') 
+    THEN '✓ Created' 
+    ELSE '✗ Missing' 
+  END as status
+UNION ALL
+SELECT 
+  'users' as table_name,
+  CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'users') 
     THEN '✓ Created' 
     ELSE '✗ Missing' 
   END as status;
