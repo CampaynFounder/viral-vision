@@ -103,7 +103,7 @@ BEGIN
         payment_record.created_at,
         NOW()
       )
-      ON CONFLICT (user_id) DO UPDATE
+      ON CONFLICT ON CONSTRAINT subscriptions_user_id_key DO UPDATE
       SET 
         status = 'active',
         plan_id = payment_record.product_id,
@@ -164,7 +164,7 @@ BEGIN
       NEW.created_at,
       NOW()
     )
-    ON CONFLICT (user_id) DO UPDATE
+    ON CONFLICT ON CONSTRAINT subscriptions_user_id_key DO UPDATE
     SET 
       status = 'active',
       plan_id = NEW.product_id,
