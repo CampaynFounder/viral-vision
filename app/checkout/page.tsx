@@ -10,6 +10,7 @@ import StripeProvider from "@/components/payment/StripeProvider";
 import StripeCardElement from "@/components/payment/StripeCardElement";
 import { useStripe, useElements } from "@stripe/react-stripe-js";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { supabase } from "@/lib/supabase/client";
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
@@ -25,6 +26,12 @@ function CheckoutContent() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [showSignUp, setShowSignUp] = useState(false);
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [signUpPassword, setSignUpPassword] = useState("");
+  const [signUpLoading, setSignUpLoading] = useState(false);
+  const [signUpError, setSignUpError] = useState<string | null>(null);
 
   useEffect(() => {
     const tier = pricingTiers.find((t) => t.id === productId);
@@ -81,8 +88,9 @@ function CheckoutContent() {
           throw new Error(errorMessage);
         }
 
-        const { clientSecret: secret } = await response.json();
+        const { clientSecret: secret, paymentIntentId: intentId } = await response.json();
         setClientSecret(secret);
+        setPaymentIntentId(intentId);
         
         // Step 2: Confirm Payment
         const cardElement = elements.getElement("card");
@@ -102,6 +110,18 @@ function CheckoutContent() {
 
         if (paymentIntent?.status === "succeeded") {
           setCheckoutSuccess(true);
+          
+          // Store pending payment info if user is not authenticated
+          if (!user && selectedTier && paymentIntent.id) {
+            sessionStorage.setItem("pendingPayment", JSON.stringify({
+              paymentIntentId: paymentIntent.id,
+              productId: selectedTier.id,
+              credits: selectedTier.credits,
+              tierType: selectedTier.type,
+              timestamp: Date.now()
+            }));
+            setShowSignUp(true);
+          }
         } else {
           throw new Error("Payment not completed");
         }
@@ -124,6 +144,18 @@ function CheckoutContent() {
 
         if (paymentIntent?.status === "succeeded") {
           setCheckoutSuccess(true);
+          
+          // Store pending payment info if user is not authenticated
+          if (!user && selectedTier && paymentIntent.id) {
+            sessionStorage.setItem("pendingPayment", JSON.stringify({
+              paymentIntentId: paymentIntent.id,
+              productId: selectedTier.id,
+              credits: selectedTier.credits,
+              tierType: selectedTier.type,
+              timestamp: Date.now()
+            }));
+            setShowSignUp(true);
+          }
         } else {
           throw new Error("Payment not completed");
         }
@@ -137,8 +169,8 @@ function CheckoutContent() {
   };
 
   const handleSuccessContinue = () => {
-    // Set mock credits in localStorage
-    if (selectedTier) {
+    // Grant credits and redirect (for authenticated users)
+    if (selectedTier && user) {
       // Store the user's tier (this determines if Upgrade button shows)
       localStorage.setItem("userTier", selectedTier.id);
       
@@ -153,6 +185,10 @@ function CheckoutContent() {
         localStorage.setItem("credits", credits.toString());
         router.push("/generate");
       }
+    } else if (selectedTier && !user) {
+      // If not authenticated, sign-up form should be showing
+      // This shouldn't be called, but handle it gracefully
+      setShowSignUp(true);
     }
   };
 
@@ -250,41 +286,177 @@ function CheckoutContent() {
         titleStyle={{ color: '#1C1917', fontWeight: 'bold' }}
       >
         {checkoutSuccess ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-8"
-          >
-            <motion.svg
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.5 }}
-              className="w-16 h-16 mx-auto mb-4 text-champagne"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          !user && showSignUp ? (
+            // Inline sign-up form for unauthenticated users
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="py-4"
             >
-              <motion.path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </motion.svg>
-            <h3 className="heading-luxury text-2xl text-white mb-2 font-bold" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.3)' }}>
-              Payment Successful!
-            </h3>
-            <p className="text-white mb-6 font-medium" style={{ color: '#FFFFFF', textShadow: '0 1px 4px rgba(0,0,0,0.5), 0 0 1px rgba(0,0,0,0.3)' }}>
-              Your access has been activated. Start generating now.
-            </p>
-            <button
-              onClick={handleSuccessContinue}
-              className="w-full py-3 bg-champagne text-white rounded-xl font-semibold touch-target hover:bg-champagne-dark transition-colors"
-              style={{ color: '#FFFFFF', backgroundColor: '#D4AF37' }}
+              <div className="text-center mb-6">
+                <motion.svg
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-12 h-12 mx-auto mb-3 text-champagne"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <motion.path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </motion.svg>
+                <h3 className="heading-luxury text-xl text-mocha mb-2 font-bold">
+                  Payment Successful!
+                </h3>
+                <p className="text-sm text-mocha mb-1">
+                  Create an account to access your {selectedTier?.credits === "unlimited" ? "unlimited" : selectedTier?.credits} credits
+                </p>
+              </div>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setSignUpLoading(true);
+                  setSignUpError(null);
+                  hapticMedium();
+
+                  try {
+                    const { data, error: signUpError } = await supabase.auth.signUp({
+                      email: signUpEmail,
+                      password: signUpPassword,
+                      options: {
+                        emailRedirectTo: `${window.location.origin}/auth/callback`,
+                      },
+                    });
+
+                    if (signUpError) throw signUpError;
+
+                    if (data.user) {
+                      // Grant credits immediately (user is created, even if email not verified)
+                      const pendingPayment = JSON.parse(sessionStorage.getItem("pendingPayment") || "{}");
+                      if (pendingPayment.productId && selectedTier) {
+                        localStorage.setItem("userTier", selectedTier.id);
+                        if (selectedTier.type === "subscription") {
+                          localStorage.setItem("subscription", "active");
+                          localStorage.setItem("credits", "unlimited");
+                        } else {
+                          const credits = selectedTier.credits as number;
+                          localStorage.setItem("credits", credits.toString());
+                        }
+                        sessionStorage.removeItem("pendingPayment");
+                      }
+                      
+                      // Redirect to generate page
+                      router.push("/generate");
+                    }
+                  } catch (err: any) {
+                    setSignUpError(err.message || "Failed to create account");
+                  } finally {
+                    setSignUpLoading(false);
+                  }
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-mocha mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={signUpEmail}
+                    onChange={(e) => setSignUpEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    className="w-full p-3 border-2 border-stone-200 rounded-xl bg-white focus:outline-none focus:border-champagne transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-mocha mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={signUpPassword}
+                    onChange={(e) => setSignUpPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                    className="w-full p-3 border-2 border-stone-200 rounded-xl bg-white focus:outline-none focus:border-champagne transition-colors"
+                  />
+                </div>
+
+                {signUpError && (
+                  <div className="p-3 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 text-sm">
+                    {signUpError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={signUpLoading}
+                  className="w-full py-3 bg-champagne text-white rounded-xl font-semibold touch-target hover:bg-champagne-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ color: '#FFFFFF', backgroundColor: '#D4AF37' }}
+                >
+                  {signUpLoading ? "Creating Account..." : "Create Account & Access Credits"}
+                </button>
+
+                <p className="text-xs text-mocha-light text-center">
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push("/auth?redirect=/checkout");
+                    }}
+                    className="text-champagne hover:underline font-medium"
+                  >
+                    Sign in
+                  </button>
+                </p>
+              </form>
+            </motion.div>
+          ) : (
+            // Success message for authenticated users
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-8"
             >
-              Start Generating
-            </button>
-          </motion.div>
+              <motion.svg
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.5 }}
+                className="w-16 h-16 mx-auto mb-4 text-champagne"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <motion.path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </motion.svg>
+              <h3 className="heading-luxury text-2xl text-white mb-2 font-bold" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.3)' }}>
+                Payment Successful!
+              </h3>
+              <p className="text-white mb-6 font-medium" style={{ color: '#FFFFFF', textShadow: '0 1px 4px rgba(0,0,0,0.5), 0 0 1px rgba(0,0,0,0.3)' }}>
+                Your access has been activated. Start generating now.
+              </p>
+              <button
+                onClick={handleSuccessContinue}
+                className="w-full py-3 bg-champagne text-white rounded-xl font-semibold touch-target hover:bg-champagne-dark transition-colors"
+                style={{ color: '#FFFFFF', backgroundColor: '#D4AF37' }}
+              >
+                Start Generating
+              </button>
+            </motion.div>
+          )
         ) : (
           <div className="py-4">
             {/* Instructions Text */}

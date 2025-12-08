@@ -48,6 +48,36 @@ export default function AuthPage() {
         }
 
         if (data.user) {
+          // Check for pending payment and grant credits
+          const pendingPayment = sessionStorage.getItem("pendingPayment");
+          if (pendingPayment) {
+            try {
+              const payment = JSON.parse(pendingPayment);
+              const { pricingTiers } = await import("@/lib/constants/pricing");
+              const tier = pricingTiers.find((t) => t.id === payment.productId);
+              
+              if (tier) {
+                localStorage.setItem("userTier", tier.id);
+                if (tier.type === "subscription") {
+                  localStorage.setItem("subscription", "active");
+                  localStorage.setItem("credits", "unlimited");
+                } else {
+                  const credits = tier.credits as number;
+                  localStorage.setItem("credits", credits.toString());
+                }
+                sessionStorage.removeItem("pendingPayment");
+                
+                // Redirect to generate page with credits
+                setTimeout(() => {
+                  router.push("/generate");
+                }, 100);
+                return;
+              }
+            } catch (err) {
+              console.error("Error processing pending payment:", err);
+            }
+          }
+          
           setMessage(
             "Check your email for the confirmation link! We've sent you a verification email."
           );
@@ -64,6 +94,30 @@ export default function AuthPage() {
         }
 
         if (data.user) {
+          // Check for pending payment and grant credits
+          const pendingPayment = sessionStorage.getItem("pendingPayment");
+          if (pendingPayment) {
+            try {
+              const payment = JSON.parse(pendingPayment);
+              const { pricingTiers } = await import("@/lib/constants/pricing");
+              const tier = pricingTiers.find((t) => t.id === payment.productId);
+              
+              if (tier) {
+                localStorage.setItem("userTier", tier.id);
+                if (tier.type === "subscription") {
+                  localStorage.setItem("subscription", "active");
+                  localStorage.setItem("credits", "unlimited");
+                } else {
+                  const credits = tier.credits as number;
+                  localStorage.setItem("credits", credits.toString());
+                }
+                sessionStorage.removeItem("pendingPayment");
+              }
+            } catch (err) {
+              console.error("Error processing pending payment:", err);
+            }
+          }
+          
           router.push("/generate");
         }
       }
