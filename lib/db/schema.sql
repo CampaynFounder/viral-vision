@@ -128,6 +128,33 @@ CREATE POLICY "Users can view active system prompt"
 -- System Prompts: Only admins can create/update (using service role in API routes)
 -- RLS will be bypassed using service role key for admin operations
 
+-- Payments table (stores all payment transactions)
+CREATE TABLE IF NOT EXISTS public.payments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  stripe_payment_intent_id TEXT UNIQUE NOT NULL,
+  stripe_customer_id TEXT,
+  product_id TEXT NOT NULL, -- 'viral-starter', 'ceo-access', 'empire-bundle'
+  amount INTEGER NOT NULL, -- Amount in cents
+  currency TEXT NOT NULL DEFAULT 'usd',
+  status TEXT NOT NULL, -- 'succeeded', 'pending', 'failed', 'canceled'
+  payment_method_type TEXT, -- 'card', 'bank_account', etc.
+  metadata JSONB, -- Additional payment metadata
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS on payments table
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+
+-- Payments: Users can only view their own payments
+CREATE POLICY "Users can view own payments"
+  ON public.payments FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Payments: Only service role can insert/update (via API routes)
+-- This ensures payments are only created server-side after verification
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_credits_user_id ON public.credits(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON public.subscriptions(user_id);
@@ -137,4 +164,7 @@ CREATE INDEX IF NOT EXISTS idx_prompts_slug ON public.prompts(slug) WHERE slug I
 CREATE INDEX IF NOT EXISTS idx_prompt_history_user_id ON public.prompt_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_system_prompts_active ON public.system_prompts(is_active) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_prompts_system_prompt_id ON public.prompts(system_prompt_id);
+CREATE INDEX IF NOT EXISTS idx_payments_user_id ON public.payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_stripe_payment_intent_id ON public.payments(stripe_payment_intent_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON public.payments(status);
 

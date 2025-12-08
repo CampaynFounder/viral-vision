@@ -47,7 +47,14 @@ export async function POST(request: NextRequest) {
     
     // Add metadata as individual key-value pairs (Stripe format: metadata[key])
     formData.append("metadata[productId]", productId);
-    formData.append("metadata[userId]", userId || "anonymous");
+    // CRITICAL: Reject anonymous payments
+    if (!userId || userId === "anonymous") {
+      return NextResponse.json(
+        { error: "Authentication required. User must be logged in to make a payment." },
+        { status: 401 }
+      );
+    }
+    formData.append("metadata[userId]", userId);
 
     const response = await fetch("https://api.stripe.com/v1/payment_intents", {
       method: "POST",
