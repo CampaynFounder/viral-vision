@@ -121,8 +121,25 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-30 bg-alabaster/80 backdrop-blur-md border-b border-stone-200">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+    <header 
+      className="sticky top-0 z-30 border-b border-stone-200 relative overflow-hidden"
+      style={{
+        backgroundImage: user ? 'url(/header-background.png)' : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Overlay for text contrast - only show when logged in with background */}
+      {user && (
+        <div 
+          className="absolute inset-0 bg-alabaster/85 backdrop-blur-sm"
+          style={{
+            backgroundColor: 'rgba(250, 249, 246, 0.85)', // alabaster with opacity
+          }}
+        />
+      )}
+      <div className="max-w-7xl mx-auto px-6 py-4 relative z-10">
         <div className="flex items-center justify-between">
           {/* Logo/Home */}
           <motion.button
@@ -235,7 +252,10 @@ export default function Header() {
           <div className="flex items-center gap-4">
             {user && (
               <div className="hidden sm:flex items-center gap-3">
-                <span className="text-sm text-mocha font-medium">
+                <span 
+                  className="text-sm font-semibold"
+                  style={{ color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }}
+                >
                   {user.email?.split("@")[0]}
                 </span>
               </div>
@@ -249,19 +269,19 @@ export default function Header() {
         </div>
 
         {/* Mobile Navigation */}
-        <nav className="sm:hidden flex items-center justify-between mt-4 pt-4 border-t border-stone-200">
+        <nav className="sm:hidden flex items-center justify-between mt-4 pt-4 border-t border-stone-200/50">
           <button
             onClick={() => {
               hapticLight();
               router.push("/generate");
             }}
-            className={`body-luxury text-xs touch-target font-medium ${
-              pathname.startsWith("/generate") ? "text-champagne" : "text-mocha"
+            className={`body-luxury text-xs touch-target font-semibold ${
+              pathname.startsWith("/generate") ? "text-champagne" : "text-mocha-dark"
             }`}
             style={
               pathname.startsWith("/generate")
-                ? { color: '#D4AF37' }
-                : { color: '#6B5A42' }
+                ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
+                : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
             }
           >
             Generate
@@ -271,13 +291,13 @@ export default function Header() {
               hapticLight();
               router.push("/portfolio");
             }}
-            className={`body-luxury text-xs touch-target font-medium ${
-              pathname === "/portfolio" ? "text-champagne" : "text-mocha"
+            className={`body-luxury text-xs touch-target font-semibold ${
+              pathname === "/portfolio" ? "text-champagne" : "text-mocha-dark"
             }`}
             style={
               pathname === "/portfolio"
-                ? { color: '#D4AF37' }
-                : { color: '#6B5A42' }
+                ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
+                : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
             }
           >
             Portfolio
@@ -287,13 +307,13 @@ export default function Header() {
               hapticLight();
               router.push("/profile");
             }}
-            className={`body-luxury text-xs touch-target font-medium ${
-              pathname === "/profile" ? "text-champagne" : "text-mocha"
+            className={`body-luxury text-xs touch-target font-semibold ${
+              pathname === "/profile" ? "text-champagne" : "text-mocha-dark"
             }`}
             style={
               pathname === "/profile"
-                ? { color: '#D4AF37' }
-                : { color: '#6B5A42' }
+                ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
+                : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
             }
           >
             Profile
@@ -305,8 +325,13 @@ export default function Header() {
                 hapticLight();
                 router.push("/checkout");
               }}
-              className="body-luxury text-xs px-3 py-1.5 bg-champagne text-white rounded-full touch-target"
-              style={{ backgroundColor: '#D4AF37', color: '#FFFFFF' }}
+              className="body-luxury text-xs px-3 py-1.5 bg-champagne text-white rounded-full touch-target font-semibold shadow-md"
+              style={{ 
+                backgroundColor: '#D4AF37', 
+                color: '#FFFFFF',
+                textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}
             >
               Upgrade
             </button>

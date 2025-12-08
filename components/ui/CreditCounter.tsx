@@ -29,13 +29,19 @@ export default function CreditCounter({
       className={`flex items-center gap-2 ${className}`}
     >
       <div className="flex flex-col items-end">
-        <span className="body-luxury text-xs text-mocha-light">
+        <span 
+          className="body-luxury text-xs font-semibold"
+          style={{ color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }}
+        >
           {isUnlimited ? "Unlimited" : "Credits"}
         </span>
         <span
-          className={`heading-luxury text-lg font-bold ${
-            isLow ? "text-red-500" : "text-champagne"
-          }`}
+          className="heading-luxury text-lg font-bold"
+          style={
+            isLow 
+              ? { color: '#DC2626', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
+              : { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
+          }
         >
           {isUnlimited ? "∞" : credits}
         </span>
@@ -44,7 +50,8 @@ export default function CreditCounter({
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          className="text-xs text-red-500"
+          className="text-xs font-semibold"
+          style={{ color: '#DC2626', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }}
         >
           Low
         </motion.div>
