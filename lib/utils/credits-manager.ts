@@ -14,11 +14,31 @@ export interface UserCredits {
   subscriptionStatus: "active" | "none";
 }
 
+// Cache to prevent redundant database calls
+const creditsCache = new Map<string, { data: UserCredits; timestamp: number }>();
+const CACHE_DURATION = 30000; // 30 seconds - increased to prevent flooding during generation
+const pendingRequests = new Map<string, Promise<UserCredits>>(); // Track in-flight requests
+
 /**
  * Initialize credits for a user on first login
  * Fetches from Supabase first, then falls back to localStorage
+ * Uses caching to prevent redundant database calls
  */
 export async function initializeUserCredits(userId: string | null): Promise<UserCredits> {
+  // Check cache first
+  const cacheKey = userId || "anonymous";
+  const cached = creditsCache.get(cacheKey);
+  const now = Date.now();
+  
+  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    return cached.data;
+  }
+  
+  // Check if there's already a pending request for this user
+  const pendingRequest = pendingRequests.get(cacheKey);
+  if (pendingRequest) {
+    return pendingRequest;
+  }
   // For new users, start with 5 free credits (designed to convert after first prompt)
   const defaultCredits: UserCredits = {
     credits: 5,
@@ -35,101 +55,130 @@ export async function initializeUserCredits(userId: string | null): Promise<User
 
     // Only trust subscription if there's a valid tier
     if (subscription === "active" && tier) {
-      return {
+      const result = {
         credits: 999, // Display value for unlimited
         isUnlimited: true,
         userTier: tier,
-        subscriptionStatus: "active",
+        subscriptionStatus: "active" as const,
       };
+      creditsCache.set(cacheKey, { data: result, timestamp: now });
+      return result;
     }
 
     if (stored && stored !== "unlimited" && !isNaN(parseInt(stored, 10))) {
-      return {
+      const result = {
         credits: parseInt(stored, 10),
         isUnlimited: false,
         userTier: tier,
-        subscriptionStatus: "none",
+        subscriptionStatus: "none" as const,
       };
+      creditsCache.set(cacheKey, { data: result, timestamp: now });
+      return result;
     }
 
+    creditsCache.set(cacheKey, { data: defaultCredits, timestamp: now });
     return defaultCredits;
   }
 
   // Authenticated user - ALWAYS fetch from Supabase (database is source of truth)
-  try {
-    // Check for active subscription (database source of truth)
-    const { data: subscription, error: subError } = await supabase
-      .from('subscriptions')
-      .select('status, plan_id')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .single();
+  // Create a promise for this request to prevent duplicate calls
+  const fetchPromise = (async () => {
+    try {
+      // Check for active subscription (database source of truth)
+      const { data: subscription, error: subError } = await supabase
+        .from('subscriptions')
+        .select('status, plan_id')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
 
-    if (subscription && !subError) {
-      // User has unlimited subscription - database is source of truth
-      // Cache in localStorage for offline/performance, but DB is authoritative
-      localStorage.setItem("subscription", "active");
-      localStorage.setItem("userTier", subscription.plan_id);
-      localStorage.setItem("credits", "unlimited");
+      if (subscription && !subError) {
+        // User has unlimited subscription - database is source of truth
+        // Cache in localStorage for offline/performance, but DB is authoritative
+        localStorage.setItem("subscription", "active");
+        localStorage.setItem("userTier", subscription.plan_id);
+        localStorage.setItem("credits", "unlimited");
+        
+        const result = {
+          credits: 999, // Display value for unlimited
+          isUnlimited: true,
+          userTier: subscription.plan_id,
+          subscriptionStatus: "active" as const,
+        };
+        
+        // Update cache
+        creditsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+        
+        return result;
+      }
+
+      // Get total credits from database (SUM of all credit transactions)
+      // Database is source of truth - calculate from credits table
+      const { data: creditRecords, error: creditError } = await supabase
+        .from('credits')
+        .select('amount')
+        .eq('user_id', userId);
+
+      if (creditError) {
+        console.error("Error fetching credits from database:", creditError);
+        // If database query fails, throw error - don't fall back to localStorage
+        throw new Error(`Failed to fetch credits from database: ${creditError.message}`);
+      }
+
+      // Calculate total from database transactions (source of truth)
+      const totalCredits = creditRecords?.reduce((sum, record) => sum + record.amount, 0) || 0;
       
-      return {
-        credits: 999, // Display value for unlimited
-        isUnlimited: true,
-        userTier: subscription.plan_id,
-        subscriptionStatus: "active",
+      // Cache in localStorage for performance, but DB is authoritative
+      localStorage.setItem("credits", totalCredits.toString());
+      
+      // Get user tier from most recent purchase (database source of truth)
+      const { data: recentPayment } = await supabase
+        .from('payments')
+        .select('product_id')
+        .eq('user_id', userId)
+        .eq('status', 'succeeded')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (recentPayment) {
+        localStorage.setItem("userTier", recentPayment.product_id);
+      }
+
+      const result = {
+        credits: totalCredits,
+        isUnlimited: false,
+        userTier: recentPayment?.product_id || null,
+        subscriptionStatus: "none" as const,
       };
+      
+      // Update cache
+      creditsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      
+      return result;
+    } catch (error) {
+      console.error("Error fetching credits from Supabase:", error);
+      // For authenticated users, we MUST have database access
+      // If database is unavailable, return error state rather than stale localStorage
+      const errorResult = {
+        credits: 0,
+        isUnlimited: false,
+        userTier: null,
+        subscriptionStatus: "none" as const,
+      };
+      
+      // Don't cache error results
+      return errorResult;
+    } finally {
+      // Remove from pending requests once complete
+      pendingRequests.delete(cacheKey);
     }
-
-    // Get total credits from database (SUM of all credit transactions)
-    // Database is source of truth - calculate from credits table
-    const { data: creditRecords, error: creditError } = await supabase
-      .from('credits')
-      .select('amount')
-      .eq('user_id', userId);
-
-    if (creditError) {
-      console.error("Error fetching credits from database:", creditError);
-      // If database query fails, throw error - don't fall back to localStorage
-      throw new Error(`Failed to fetch credits from database: ${creditError.message}`);
-    }
-
-    // Calculate total from database transactions (source of truth)
-    const totalCredits = creditRecords?.reduce((sum, record) => sum + record.amount, 0) || 0;
-    
-    // Cache in localStorage for performance, but DB is authoritative
-    localStorage.setItem("credits", totalCredits.toString());
-    
-    // Get user tier from most recent purchase (database source of truth)
-    const { data: recentPayment } = await supabase
-      .from('payments')
-      .select('product_id')
-      .eq('user_id', userId)
-      .eq('status', 'succeeded')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (recentPayment) {
-      localStorage.setItem("userTier", recentPayment.product_id);
-    }
-
-    return {
-      credits: totalCredits,
-      isUnlimited: false,
-      userTier: recentPayment?.product_id || null,
-      subscriptionStatus: "none",
-    };
-  } catch (error) {
-    console.error("Error fetching credits from Supabase:", error);
-    // For authenticated users, we MUST have database access
-    // If database is unavailable, return error state rather than stale localStorage
-    return {
-      credits: 0,
-      isUnlimited: false,
-      userTier: null,
-      subscriptionStatus: "none",
-    };
-  }
+  })();
+  
+  // Store the pending request
+  pendingRequests.set(cacheKey, fetchPromise);
+  
+  return fetchPromise;
 }
 
 /**
@@ -251,6 +300,9 @@ export async function grantCredits(
         
         if (subError) {
           console.error("Error updating subscription in Supabase:", subError);
+        } else {
+          // Clear cache so next fetch gets fresh data
+          clearCreditsCache(userId);
         }
       } catch (error) {
         console.error("Error granting unlimited credits:", error);
@@ -279,6 +331,8 @@ export async function grantCredits(
           // Still update localStorage even if Supabase fails
         } else {
           console.log(`✅ Granted ${amount} credits to user ${userId} (source: ${source})`);
+          // Clear cache so next fetch gets fresh data
+          clearCreditsCache(userId);
         }
       } catch (error) {
         console.error("Error granting credits:", error);
@@ -351,6 +405,9 @@ export async function grantFirstTimeBonus(userId: string | null): Promise<void> 
   const newAmount = currentAmount + 5;
   localStorage.setItem("credits", newAmount.toString());
   
+  // Clear cache so next fetch gets fresh data
+  clearCreditsCache(userId);
+  
   // Phase 2: Record in Supabase
   // if (userId) {
   //   await supabase.from('credits').insert({
@@ -358,6 +415,7 @@ export async function grantFirstTimeBonus(userId: string | null): Promise<void> 
   //     amount: 5,
   //     source: 'first_time_bonus',
   //   });
+  //   clearCreditsCache(userId);
   // }
 }
 
@@ -396,5 +454,15 @@ export function isEligibleForFirstTimeBonus(
   }
   
   return true;
+}
+
+/**
+ * Clear the credits cache for a specific user
+ * This forces the next call to initializeUserCredits to fetch fresh data from the database
+ */
+export function clearCreditsCache(userId: string | null): void {
+  const cacheKey = userId || "anonymous";
+  creditsCache.delete(cacheKey);
+  pendingRequests.delete(cacheKey);
 }
 
