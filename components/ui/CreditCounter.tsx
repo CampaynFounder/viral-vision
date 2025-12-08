@@ -30,8 +30,11 @@ export default function CreditCounter({
     >
       <div className="flex flex-col items-end">
         <span 
-          className="body-luxury text-xs font-semibold"
-          style={{ color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }}
+          className="body-luxury text-xs font-bold"
+          style={{ 
+            color: '#FFFFFF', 
+            textShadow: '0 2px 4px rgba(0,0,0,0.6), 0 0 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5)' 
+          }}
         >
           {isUnlimited ? "Unlimited" : "Credits"}
         </span>
@@ -39,8 +42,14 @@ export default function CreditCounter({
           className="heading-luxury text-lg font-bold"
           style={
             isLow 
-              ? { color: '#DC2626', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
-              : { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
+              ? { 
+                  color: '#FF6B6B', 
+                  textShadow: '0 2px 4px rgba(0,0,0,0.6), 0 0 8px rgba(220,38,38,0.4), 0 1px 2px rgba(0,0,0,0.5)' 
+                }
+              : { 
+                  color: '#D4AF37', 
+                  textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(212,175,55,0.3), 0 1px 2px rgba(0,0,0,0.4)' 
+                }
           }
         >
           {isUnlimited ? "∞" : credits}
@@ -50,8 +59,11 @@ export default function CreditCounter({
         <motion.div
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          className="text-xs font-semibold"
-          style={{ color: '#DC2626', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }}
+          className="text-xs font-bold"
+          style={{ 
+            color: '#FF6B6B', 
+            textShadow: '0 2px 4px rgba(0,0,0,0.6), 0 0 8px rgba(220,38,38,0.4), 0 1px 2px rgba(0,0,0,0.5)' 
+          }}
         >
           Low
         </motion.div>

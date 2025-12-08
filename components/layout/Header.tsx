@@ -122,7 +122,7 @@ export default function Header() {
 
   return (
     <header 
-      className="sticky top-0 z-30 border-b border-stone-200 relative overflow-hidden"
+      className="sticky top-0 z-30 border-b border-stone-200/50 relative overflow-hidden"
       style={{
         backgroundImage: user ? 'url(/header-background.png)' : 'none',
         backgroundSize: 'cover',
@@ -130,12 +130,21 @@ export default function Header() {
         backgroundRepeat: 'no-repeat',
       }}
     >
-      {/* Overlay for text contrast - only show when logged in with background */}
+      {/* Overlay for text contrast - reduced opacity to show more of the image */}
       {user && (
         <div 
-          className="absolute inset-0 bg-alabaster/85 backdrop-blur-sm"
+          className="absolute inset-0 backdrop-blur-[2px]"
           style={{
-            backgroundColor: 'rgba(250, 249, 246, 0.85)', // alabaster with opacity
+            backgroundColor: 'rgba(250, 249, 246, 0.35)', // Reduced from 0.85 to 0.35 for more image visibility
+          }}
+        />
+      )}
+      {/* Additional dark overlay for text readability */}
+      {user && (
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.05) 100%)',
           }}
         />
       )}
@@ -268,8 +277,11 @@ export default function Header() {
             {user && (
               <div className="hidden sm:flex items-center gap-3">
                 <span 
-                  className="text-sm font-semibold"
-                  style={{ color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }}
+                  className="text-sm font-bold"
+                  style={{ 
+                    color: '#FFFFFF', 
+                    textShadow: '0 2px 4px rgba(0,0,0,0.6), 0 0 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5)' 
+                  }}
                 >
                   {user.email?.split("@")[0]}
                 </span>
@@ -284,19 +296,25 @@ export default function Header() {
         </div>
 
         {/* Mobile Navigation */}
-        <nav className="sm:hidden flex items-center justify-between mt-4 pt-4 border-t border-stone-200/50">
+        <nav className="sm:hidden flex items-center justify-between mt-4 pt-4 border-t border-white/20">
           <button
             onClick={() => {
               hapticLight();
               router.push("/generate");
             }}
-            className={`body-luxury text-xs touch-target font-semibold ${
-              pathname.startsWith("/generate") ? "text-champagne" : "text-mocha-dark"
+            className={`body-luxury text-xs touch-target font-bold ${
+              pathname.startsWith("/generate") ? "text-champagne" : "text-white"
             }`}
             style={
               pathname.startsWith("/generate")
-                ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
-                : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
+                ? { 
+                    color: '#D4AF37', 
+                    textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.4)' 
+                  }
+                : { 
+                    color: '#FFFFFF', 
+                    textShadow: '0 2px 4px rgba(0,0,0,0.6), 0 0 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5)' 
+                  }
             }
           >
             Generate
@@ -306,13 +324,19 @@ export default function Header() {
               hapticLight();
               router.push("/portfolio");
             }}
-            className={`body-luxury text-xs touch-target font-semibold ${
-              pathname === "/portfolio" ? "text-champagne" : "text-mocha-dark"
+            className={`body-luxury text-xs touch-target font-bold ${
+              pathname === "/portfolio" ? "text-champagne" : "text-white"
             }`}
             style={
               pathname === "/portfolio"
-                ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
-                : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
+                ? { 
+                    color: '#D4AF37', 
+                    textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.4)' 
+                  }
+                : { 
+                    color: '#FFFFFF', 
+                    textShadow: '0 2px 4px rgba(0,0,0,0.6), 0 0 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5)' 
+                  }
             }
           >
             Portfolio
@@ -322,13 +346,19 @@ export default function Header() {
               hapticLight();
               router.push("/profile");
             }}
-            className={`body-luxury text-xs touch-target font-semibold ${
-              pathname === "/profile" ? "text-champagne" : "text-mocha-dark"
+            className={`body-luxury text-xs touch-target font-bold ${
+              pathname === "/profile" ? "text-champagne" : "text-white"
             }`}
             style={
               pathname === "/profile"
-                ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
-                : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
+                ? { 
+                    color: '#D4AF37', 
+                    textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.4)' 
+                  }
+                : { 
+                    color: '#FFFFFF', 
+                    textShadow: '0 2px 4px rgba(0,0,0,0.6), 0 0 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5)' 
+                  }
             }
           >
             Profile
@@ -340,12 +370,12 @@ export default function Header() {
                 hapticLight();
                 router.push("/checkout");
               }}
-              className="body-luxury text-xs px-3 py-1.5 bg-champagne text-white rounded-full touch-target font-semibold shadow-md"
+              className="body-luxury text-xs px-3 py-1.5 bg-champagne text-white rounded-full touch-target font-bold shadow-lg"
               style={{ 
                 backgroundColor: '#D4AF37', 
                 color: '#FFFFFF',
-                textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                textShadow: '0 2px 4px rgba(0,0,0,0.4), 0 0 6px rgba(0,0,0,0.2)',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)'
               }}
             >
               Upgrade
