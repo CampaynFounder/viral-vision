@@ -56,7 +56,6 @@ export default function RefinePage() {
     const parsed = JSON.parse(data);
     setWizardData({
       userInput: parsed.input,
-      facelessMode: parsed.facelessMode,
     });
 
     // Load credits and generation count using credits manager
@@ -188,7 +187,6 @@ export default function RefinePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userInput: data.input,
-          facelessMode: data.facelessMode,
           aesthetic: selectedAesthetic,
           shotType: selectedShotType,
           wardrobe: selectedWardrobe,
@@ -334,6 +332,87 @@ export default function RefinePage() {
                 </motion.button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Subject Details Section */}
+        <div className="mb-6 sm:mb-8">
+          <h3 className="body-luxury text-xs text-mocha-light mb-4">Subject Details</h3>
+          <div className="space-y-4 bg-white rounded-2xl p-4 sm:p-6 border border-stone-200">
+            {/* Format Toggle */}
+            <div className="mb-4">
+              <label className="block mb-2">
+                <span className="body-luxury text-xs text-mocha-dark font-medium">
+                  Format <span className="text-mocha-light">(optional)</span>
+                </span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["image", "video"] as const).map((format) => {
+                  const isSelected = wizardData.format === format;
+                  return (
+                    <motion.button
+                      key={format}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        hapticLight();
+                        updateWizardData("format", format);
+                      }}
+                      className={`p-3 rounded-xl border-2 transition-all text-sm font-medium min-h-[44px] flex items-center justify-center ${
+                        isSelected
+                          ? "border-champagne bg-champagne/10"
+                          : "border-stone-200 bg-white hover:border-champagne/50"
+                      }`}
+                      style={
+                        isSelected
+                          ? { borderColor: "#D4AF37", backgroundColor: "rgba(212, 175, 55, 0.1)" }
+                          : {}
+                      }
+                    >
+                      <span
+                        className="capitalize"
+                        style={{ color: isSelected ? "#B8941F" : "#6B5A42" }}
+                      >
+                        {format}
+                      </span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Race */}
+            <WizardField
+              label="Race"
+              description="Optional - defaults to African American if not specified"
+              type="select"
+              options={["African American", "Caucasian", "Asian", "Hispanic/Latino", "Mixed", "Other", "Prefer not to say"]}
+              value={wizardData.race || ""}
+              onChange={(value) => updateWizardData("race", value)}
+              isOptional={true}
+            />
+
+            {/* Skin Tone */}
+            <WizardField
+              label="Skin Tone"
+              description="Optional"
+              type="select"
+              options={["Dark", "Light", "Brown", "Bronze"]}
+              value={wizardData.skinTone || ""}
+              onChange={(value) => updateWizardData("skinTone", value)}
+              isOptional={true}
+            />
+
+            {/* Hair Color */}
+            <WizardField
+              label="Hair Color"
+              description="Optional"
+              type="select"
+              options={["Black", "Blonde", "Burgundy", "Neon", "Brown", "Red", "Other"]}
+              value={wizardData.hairColor || ""}
+              onChange={(value) => updateWizardData("hairColor", value)}
+              isOptional={true}
+            />
           </div>
         </div>
 

@@ -5,8 +5,8 @@ import Header from "@/components/layout/Header";
 import { AuthProvider } from "@/lib/contexts/AuthContext";
 
 export const metadata: Metadata = {
-  title: "Viral Vision - Generate Viral Faceless Content Prompts",
-  description: "Stop Guessing. Start Posting. Generate viral faceless content prompts with luxury aesthetics.",
+  title: "Viral Vision - Generate Viral Luxury Content Prompts",
+  description: "Stop Guessing. Start Posting. Generate viral luxury content prompts with Black Luxury aesthetics.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

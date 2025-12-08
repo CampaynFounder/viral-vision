@@ -38,7 +38,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-mocha-light mb-12 max-w-2xl mx-auto"
           >
-            Generate viral faceless content prompts with luxury aesthetics.
+            Generate viral luxury content prompts with Black Luxury aesthetics.
             <br />
             What vibe are we monetizing today?
           </motion.p>

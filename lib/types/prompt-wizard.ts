@@ -34,6 +34,12 @@ export interface PromptWizardData {
   ageRange?: string; // "20s", "30s", "40s", "ageless"
   ethnicity?: string; // Optional, user can skip
   
+  // Subject Details (New)
+  format?: "image" | "video"; // Output format
+  race?: string; // "African American", "Caucasian", "Asian", "Hispanic/Latino", "Mixed", "Other", "Prefer not to say"
+  skinTone?: "Dark" | "Light" | "Brown" | "Bronze"; // Skin tone specification
+  hairColor?: "Black" | "Blonde" | "Burgundy" | "Neon" | "Brown" | "Red" | "Other"; // Hair color
+  
   // Step 2: Pose & Body Language
   pose?: string[]; // ["relaxed", "confident", "elegant", "dynamic"]
   bodyLanguage?: string; // "leaning forward", "arms crossed", "open posture"
@@ -86,9 +92,6 @@ export interface PromptWizardData {
   // Step 11: Technical/Model Options
   model?: ModelType;
   parameters?: ModelParameters;
-  
-  // Faceless mode (existing)
-  facelessMode?: boolean;
   
   // User's original input
   userInput?: string;

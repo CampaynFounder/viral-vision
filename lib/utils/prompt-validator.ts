@@ -73,15 +73,6 @@ const detectConflicts = (data: Partial<PromptWizardData>): Conflict[] => {
     });
   }
 
-  // Check faceless mode with face-specific details
-  if (data.facelessMode && (data.hair || data.makeup)) {
-    conflicts.push({
-      field1: "facelessMode",
-      field2: "hair/makeup",
-      description: "Hair and makeup details may not be visible in faceless mode",
-      severity: "warning",
-    });
-  }
 
   return conflicts;
 };
@@ -167,10 +158,6 @@ const generateWarnings = (data: Partial<PromptWizardData>): string[] => {
     warnings.push("Too many elements may dilute the focus. Consider simplifying.");
   }
 
-  // Missing negative prompts for faceless mode
-  if (data.facelessMode && (!data.negativePrompts || data.negativePrompts.length === 0)) {
-    warnings.push("Consider adding negative prompts for better faceless results");
-  }
 
   // No model selected
   if (!data.model) {

@@ -9,7 +9,6 @@ import { Aesthetic } from "@/lib/constants/aesthetics";
 export interface EnhancedPromptInput extends Partial<PromptWizardData> {
   userInput?: string;
   aesthetic?: Aesthetic;
-  facelessMode?: boolean;
 }
 
 export const generateEnhancedPrompt = (
@@ -23,7 +22,6 @@ export const generateEnhancedPrompt = (
   // Build structured data
   const wizardData: PromptWizardData = {
     userInput: input.userInput,
-    facelessMode: input.facelessMode ?? false,
     model,
     ...input,
   };
@@ -81,7 +79,6 @@ const generateSuggestions = (
 export const convertLegacyInput = (
   input: {
     userInput: string;
-    facelessMode: boolean;
     aesthetic?: Aesthetic;
     shotType?: { keywords: string[] };
     wardrobe?: { keywords: string[] };
@@ -89,7 +86,6 @@ export const convertLegacyInput = (
 ): EnhancedPromptInput => {
   return {
     userInput: input.userInput,
-    facelessMode: input.facelessMode,
     aesthetic: input.aesthetic,
     pose: input.shotType?.keywords,
     clothing: input.wardrobe?.keywords.join(", "),

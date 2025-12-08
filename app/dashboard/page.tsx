@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CreditCounter from "@/components/ui/CreditCounter";
 import MagicInput from "@/components/ui/MagicInput";
-import FacelessToggle from "@/components/ui/FacelessToggle";
 import { motion } from "framer-motion";
 import { hapticMedium } from "@/lib/utils/haptics";
 import TextShuffler from "@/components/ui/TextShuffler";
@@ -25,7 +24,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [userInput, setUserInput] = useState("");
-  const [facelessMode, setFacelessMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [credits, setCredits] = useState(Infinity);
   const [greeting, setGreeting] = useState("Good Morning");
@@ -67,7 +65,6 @@ export default function DashboardPage() {
         "generationData",
         JSON.stringify({
           input: userInput,
-          facelessMode,
         })
       );
       router.push("/generate/refine");
@@ -120,10 +117,6 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Faceless Toggle */}
-        <div className="mb-8">
-          <FacelessToggle enabled={facelessMode} onChange={setFacelessMode} />
-        </div>
 
         {/* Manifest Button */}
         <motion.button

@@ -36,15 +36,6 @@ export const runSanityCheck = async (
   const suggestions: string[] = [];
 
   // Basic logical checks
-  if (data.facelessMode && (data.hair || data.makeup)) {
-    issues.push({
-      type: "logical",
-      severity: "warning",
-      message: "Hair and makeup details may not be visible in faceless mode",
-      field: "facelessMode",
-      fix: "Remove hair/makeup details or disable faceless mode",
-    });
-  }
 
   if (data.timeOfDay === "night" && data.lighting?.includes("golden hour")) {
     issues.push({

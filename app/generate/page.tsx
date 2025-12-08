@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import MagicInput from "@/components/ui/MagicInput";
-import FacelessToggle from "@/components/ui/FacelessToggle";
 import CreditCounter from "@/components/ui/CreditCounter";
 import TopUpModal from "@/components/ui/TopUpModal";
 import { motion } from "framer-motion";
@@ -38,7 +37,6 @@ export default function GeneratePage() {
     return null;
   }
   const [userInput, setUserInput] = useState("");
-  const [facelessMode, setFacelessMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [credits, setCredits] = useState(50);
   const [showTopUp, setShowTopUp] = useState(false);
@@ -88,7 +86,6 @@ export default function GeneratePage() {
         "generationData",
         JSON.stringify({
           input: userInput,
-          facelessMode,
         })
       );
       router.push("/generate/refine");
@@ -126,10 +123,6 @@ export default function GeneratePage() {
           />
         </div>
 
-        {/* Faceless Toggle */}
-        <div className="mb-8">
-          <FacelessToggle enabled={facelessMode} onChange={setFacelessMode} />
-        </div>
 
         {/* Manifest Button - Always visible */}
         <div className="relative z-10">

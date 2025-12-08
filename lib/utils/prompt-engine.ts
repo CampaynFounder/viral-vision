@@ -1,11 +1,10 @@
 // Prompt Engineering Logic
-// Concatenates user input with aesthetic rules and faceless mode
+// Concatenates user input with aesthetic rules
 
 import { Aesthetic, ShotType, Wardrobe } from "@/lib/constants/aesthetics";
 
 export interface PromptGenerationInput {
   userInput: string;
-  facelessMode: boolean;
   aesthetic?: Aesthetic;
   shotType?: ShotType;
   wardrobe?: Wardrobe;
@@ -13,11 +12,6 @@ export interface PromptGenerationInput {
 
 export const generatePrompt = (input: PromptGenerationInput): string => {
   let prompt = input.userInput;
-
-  // Add faceless mode rules
-  if (input.facelessMode) {
-    prompt += ", woman seen from behind, back of head, cropped face, focus on hands, motion blur, no direct gaze, no visible eyes, no face visible";
-  }
 
   // Add aesthetic keywords
   if (input.aesthetic) {

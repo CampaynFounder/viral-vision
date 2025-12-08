@@ -50,7 +50,6 @@ export default function ResultPage() {
       // Fallback to legacy prompt generation
       const input: PromptGenerationInput = {
         userInput: parsed.input,
-        facelessMode: parsed.facelessMode,
         aesthetic: parsed.aesthetic,
         shotType: parsed.shotType,
         wardrobe: parsed.wardrobe,

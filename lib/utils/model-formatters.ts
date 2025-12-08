@@ -33,11 +33,9 @@ const formatForMidjourney = (data: PromptWizardData): FormattedPrompt => {
   if (data.bodyLanguage) parts.push(data.bodyLanguage);
   if (data.gesture) parts.push(data.gesture);
 
-  // Hair, makeup, accessories (only if not faceless or faceless allows)
-  if (!data.facelessMode) {
-    if (data.hair) parts.push(data.hair);
-    if (data.makeup) parts.push(data.makeup);
-  }
+  // Hair, makeup, accessories
+  if (data.hair) parts.push(data.hair);
+  if (data.makeup) parts.push(data.makeup);
   if (data.accessories && data.accessories.length > 0) {
     parts.push(data.accessories.join(", "));
   }
@@ -77,12 +75,6 @@ const formatForMidjourney = (data: PromptWizardData): FormattedPrompt => {
   if (data.filmStock) parts.push(`shot on ${data.filmStock}`);
   if (data.postProcessing) parts.push(data.postProcessing);
 
-  // Faceless mode constraints
-  if (data.facelessMode) {
-    parts.push(
-      "woman seen from behind, back of head, cropped face, focus on hands, motion blur, no direct gaze, no visible eyes, no face visible"
-    );
-  }
 
   // Build parameters
   const params: string[] = [];
@@ -135,10 +127,6 @@ const formatForStableDiffusion = (data: PromptWizardData): FormattedPrompt => {
   // SD quality tags
   parts.push("high quality, detailed, professional photography");
 
-  // Faceless mode
-  if (data.facelessMode) {
-    parts.push("woman from behind, back of head, no face visible");
-  }
 
   const positive = parts.join(", ");
   const negative = [
@@ -191,9 +179,6 @@ const formatForDalle = (data: PromptWizardData): FormattedPrompt => {
   if (data.lighting) parts.push(`with ${data.lighting} lighting`);
   if (data.mood) parts.push(`conveying a ${data.mood} mood`);
 
-  if (data.facelessMode) {
-    parts.push("seen from behind, face not visible");
-  }
 
   // DALL·E quality descriptors
   parts.push("high quality, professional photography, detailed");

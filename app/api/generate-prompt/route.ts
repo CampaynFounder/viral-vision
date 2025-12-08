@@ -7,7 +7,6 @@ export const runtime = 'edge';
 
 interface GenerationRequest {
   userInput: string;
-  facelessMode: boolean;
   aesthetic?: {
     id: string;
     name: string;
@@ -30,7 +29,7 @@ interface GenerationRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: GenerationRequest = await request.json();
-    const { userInput, facelessMode, aesthetic, shotType, wardrobe, wizardData, model = 'midjourney' } = body;
+    const { userInput, aesthetic, shotType, wardrobe, wizardData, model = 'midjourney' } = body;
 
     const apiKey = process.env.OPENAI_API_KEY;
     
@@ -38,7 +37,7 @@ export async function POST(request: NextRequest) {
       console.error("⚠️ OPENAI_API_KEY not configured - using fallback mock response");
       // Fallback to mock if API key not set
       return NextResponse.json({
-        prompt: `${userInput}${facelessMode ? ", woman seen from behind" : ""}`,
+        prompt: userInput,
         hooks: [
           "POV: You finally stopped trading time for money...",
           "When you realize 9-5 wasn't the vibe...",
@@ -57,11 +56,6 @@ export async function POST(request: NextRequest) {
 
     // Build comprehensive prompt with all user selections
     let promptText = userInput;
-    
-    // Add faceless mode rules
-    if (facelessMode) {
-      promptText += ", woman seen from behind, back of head, cropped face, focus on hands, motion blur, no direct gaze, no visible eyes, no face visible";
-    }
     
     // Add aesthetic keywords
     if (aesthetic) {
@@ -109,39 +103,105 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Comprehensive system prompt for "Viral Instagram Curator"
-    const systemPrompt = `You are a viral Instagram content curator specializing in faceless luxury lifestyle content. Your job is to:
-1. Refine and optimize image generation prompts for maximum viral potential
-2. Ensure prompts are specific, detailed, and capture the "Old Money/Rich Mom" aesthetic
-3. Incorporate ALL user selections: aesthetic style, shot type, wardrobe, lighting, scene, camera angle, mood, materials, accessories, quality settings
-4. Add technical details that improve image quality (lighting, composition, materials, camera settings)
-5. Ensure the prompt is optimized for the target model (${model})
-6. Generate 3 viral caption hooks that would work with this image
-7. Suggest 1 trending audio/song that matches the vibe
-8. Perform a sanity check to ensure no logical conflicts or aesthetic inconsistencies
+    // New system prompt for "Black Luxury" and "High-End Lifestyle" niches
+    const systemPrompt = `# Role & Objective
 
-User Selections:
-- Aesthetic: ${aesthetic?.name || aesthetic?.id || 'Not specified'}
-- Shot Type: ${shotType?.name || shotType?.id || 'Not specified'}
-- Wardrobe: ${wardrobe?.name || wardrobe?.id || 'Not specified'}
-- Model: ${model}
-- Faceless Mode: ${facelessMode ? 'Enabled' : 'Disabled'}
-- Advanced Options: ${wizardData ? JSON.stringify(wizardData) : 'None'}
+You are an Elite AI Visual Director and Social Media Strategist specializing in the "Black Luxury" and "High-End Lifestyle" niches. Your goal is to engineer the perfect inputs for generative AI models to create hyper-realistic, aspirational AI Influencers.
 
-Return a JSON object with:
-- "refinedPrompt": The optimized, sanitized prompt (detailed and specific, ready for ${model})
-- "hooks": Array of 3 viral caption hooks (each should be engaging and conversion-focused)
-- "audio": One trending audio suggestion (song name or audio trend)
-- "sanityCheck": Object with "passed" (boolean), "issues" (array of {type, severity, message}), "suggestions" (array of strings)
+# Core Directive
 
-The refined prompt should:
-- Be optimized for ${model} syntax and parameters
-- Include all user-specified elements naturally
-- Be specific enough for high-quality image generation
-- Maintain the luxury aesthetic throughout
-- Be ready to use directly in the image generation tool
+You must translate vague or specific user inputs into a cohesive, viral-ready asset package. Your output must ALWAYS center on African American luxury aesthetics (skin texture, lighting on melanated skin, cultural styling nuances) unless explicitly instructed otherwise.
 
-Focus on luxury, aspirational content that converts.`;
+# Input Data
+
+<user_selections>
+
+Aesthetic: ${aesthetic?.name || aesthetic?.id || 'Not specified'}
+
+Shot Type: ${shotType?.name || shotType?.id || 'Not specified'}
+
+Wardrobe: ${wardrobe?.name || wardrobe?.id || 'Not specified'}
+
+Format: ${wizardData?.format || 'image'}
+
+Race: ${wizardData?.race || 'African American (default)'}
+
+Skin Tone: ${wizardData?.skinTone || 'Not specified'}
+
+Hair Color: ${wizardData?.hairColor || 'Not specified'}
+
+Target Model: ${model}
+
+Advanced Options: ${wizardData ? JSON.stringify(wizardData) : 'None'}
+
+</user_selections>
+
+# Step-by-Step Instructions
+
+## 1. Analyze & Harmonize
+
+Analyze the user selections for logical or aesthetic conflicts (e.g., "Shot Type: Macro Eye Close-up" vs. "Wardrobe: Full Body Gown").
+
+- IF a conflict exists, prioritize **Shot Type** over Wardrobe, but attempt to imply the wardrobe through visible details (straps, collars, fabric texture).
+
+- IF inputs are missing, infer them based on the "Black Luxury" core directive (e.g., if Aesthetic is missing, default to "Old Money" or "Streetwear High-Fashion").
+
+## 2. Image Prompt Engineering
+
+Construct a prompt optimized specifically for **${model}**.
+
+- **Subject:** Define a hyper-realistic African American influencer. Focus on skin texture (pores, slight imperfections for realism), distinct facial features, and confidence.
+
+- **Fashion:** Translate the "${wardrobe?.name || wardrobe?.id || 'Not specified'}" input into designer descriptions (e.g., mention fabric weights, specific stitching, brands like Balenciaga/Off-White vibes without trademark infringement if necessary).
+
+- **Technical (Photography):** Define lighting that complements darker skin tones (e.g., "warm golden hour rim light," "rembrandt lighting," "softbox fill"). Specify camera gear (e.g., "Shot on Sony A7R IV, 85mm G Master lens, f/1.8").
+
+- **Syntax Strategy:**
+
+    - IF ${model} is "Midjourney": Use comma-separated phrases, weights (::), and parameters (--v 6.0, --style raw, --stylize).
+
+    - IF ${model} is "DALL-E 3" or "Flux": Use rich, descriptive natural language sentences.
+
+## 3. Viral Strategy (Hooks & Audio)
+
+- **Hooks:** Write 3 text overlays/captions.
+
+    1. *The Controversy:* A polarizing statement or question.
+
+    2. *The POV:* Relatable aspirational POV.
+
+    3. *The Value:* A tip or "gatekeeping" reveal.
+
+- **Audio:** Suggest a specific audio vibe or trending track name that fits the visual mood (e.g., "Drake - Heavy beats," "Smooth R&B Lo-fi," "Trending TikTok Luxury Sound").
+
+## 4. Final Sanity Check
+
+Review your generated prompt against the original user inputs. Ensure no hallucinated objects appear that contradict the "Luxury" vibe (e.g., messy backgrounds, cheap fabrics).
+
+# Output Format
+
+Return valid JSON only. Do not include markdown code blocks (\`\`\`json).
+
+{
+  "refinedPrompt": "String: The fully optimized image generation prompt.",
+  "hooks": [
+    "String: Hook 1",
+    "String: Hook 2",
+    "String: Hook 3"
+  ],
+  "audio": "String: Audio suggestion",
+  "sanityCheck": {
+    "passed": Boolean,
+    "issues": [
+      {
+        "type": "String (Conflict|Missing|Quality)",
+        "severity": "String (Low|Medium|High)",
+        "message": "String: Description of the issue"
+      }
+    ],
+    "suggestions": ["String: Tip for the user to improve the result"]
+  }
+}`;
 
     // Call OpenAI API
     console.log("📞 Calling OpenAI API...");
@@ -178,10 +238,11 @@ Focus on luxury, aspirational content that converts.`;
 
     // Run sanity check on the generated prompt
     const sanityCheck = await runSanityCheck(content.refinedPrompt, {
-      facelessMode,
       aesthetic: aesthetic?.id,
       shotType: shotType?.id,
       wardrobe: wardrobe?.id,
+      race: wizardData?.race,
+      skinTone: wizardData?.skinTone,
     });
 
     return NextResponse.json({
@@ -207,10 +268,11 @@ Focus on luxury, aspirational content that converts.`;
 async function runSanityCheck(
   prompt: string,
   context: {
-    facelessMode: boolean;
     aesthetic?: string;
     shotType?: string;
     wardrobe?: string;
+    race?: string;
+    skinTone?: string;
   }
 ): Promise<{
   passed: boolean;
@@ -220,13 +282,21 @@ async function runSanityCheck(
   const issues: Array<{ type: string; severity: string; message: string }> = [];
   const suggestions: string[] = [];
 
-  // Check for logical conflicts
-  if (context.facelessMode && prompt.toLowerCase().includes("face")) {
-    issues.push({
-      type: "logical",
-      severity: "warning",
-      message: "Prompt mentions 'face' but faceless mode is enabled",
-    });
+  // Check for logical conflicts between race/skin tone and prompt content
+  if (context.race && context.skinTone) {
+    // Validate that prompt reflects the specified race and skin tone
+    const promptLower = prompt.toLowerCase();
+    const hasRaceMention = promptLower.includes(context.race.toLowerCase()) || 
+                          promptLower.includes("african american") ||
+                          promptLower.includes("black");
+    
+    if (!hasRaceMention && context.race === "African American") {
+      issues.push({
+        type: "Missing",
+        severity: "Medium",
+        message: "Prompt should reflect African American aesthetics as specified",
+      });
+    }
   }
 
   // Check aesthetic consistency
