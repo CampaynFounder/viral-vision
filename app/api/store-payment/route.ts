@@ -73,33 +73,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure user exists in users table
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("id", userId)
-      .single();
-
-    if (userError && userError.code !== "PGRST116") {
-      // PGRST116 = not found, which is expected for new users
-      console.error("Error checking user:", userError);
-    }
-
-    // Create user record if it doesn't exist
-    if (!userData) {
-      const { error: insertUserError } = await supabase
+    // Ensure user exists in public.users table (create if needed)
+    // This is optional - if it fails, we'll still store the payment
+    try {
+      const { data: userData, error: userError } = await supabase
         .from("users")
-        .insert({
-          id: userId,
-          email: metadata.email || null,
-        })
-        .select()
+        .select("id")
+        .eq("id", userId)
         .single();
 
-      if (insertUserError) {
-        console.error("Error creating user:", insertUserError);
-        // Continue anyway - user might exist in auth.users
+      // PGRST116 = not found (expected for new users)
+      if (userError && userError.code === "PGRST116") {
+        // User doesn't exist in public.users, try to create it
+        const { error: insertUserError } = await supabase
+          .from("users")
+          .insert({
+            id: userId,
+            email: metadata.email || null,
+          })
+          .select()
+          .single();
+
+        if (insertUserError) {
+          console.warn("Could not create user in public.users:", insertUserError.message);
+          // Continue anyway - user exists in auth.users and payment can still be stored
+        }
+      } else if (userError) {
+        console.warn("Error checking user in public.users:", userError.message);
+        // Continue anyway - payment can still be stored
       }
+    } catch (userTableError: any) {
+      // If public.users table doesn't exist, log and continue
+      console.warn("public.users table may not exist yet:", userTableError.message);
+      // Payment will still be stored - the foreign key constraint will handle validation
     }
 
     // Insert payment record

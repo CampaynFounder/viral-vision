@@ -129,9 +129,10 @@ CREATE POLICY "Users can view active system prompt"
 -- RLS will be bypassed using service role key for admin operations
 
 -- Payments table (stores all payment transactions)
+-- Note: user_id references auth.users directly to avoid dependency on public.users
 CREATE TABLE IF NOT EXISTS public.payments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   stripe_payment_intent_id TEXT UNIQUE NOT NULL,
   stripe_customer_id TEXT,
   product_id TEXT NOT NULL, -- 'viral-starter', 'ceo-access', 'empire-bundle'
