@@ -16,9 +16,9 @@ export interface UserCredits {
 
 /**
  * Initialize credits for a user on first login
- * Clears stale localStorage data and sets proper defaults
+ * Fetches from Supabase first, then falls back to localStorage
  */
-export function initializeUserCredits(userId: string | null): UserCredits {
+export async function initializeUserCredits(userId: string | null): Promise<UserCredits> {
   // For new users, start with 5 free credits (designed to convert after first prompt)
   const defaultCredits: UserCredits = {
     credits: 5,
@@ -43,7 +43,7 @@ export function initializeUserCredits(userId: string | null): UserCredits {
       };
     }
 
-    if (stored && !isNaN(parseInt(stored, 10))) {
+    if (stored && stored !== "unlimited" && !isNaN(parseInt(stored, 10))) {
       return {
         credits: parseInt(stored, 10),
         isUnlimited: false,
@@ -55,7 +55,69 @@ export function initializeUserCredits(userId: string | null): UserCredits {
     return defaultCredits;
   }
 
-  // Authenticated user - check for first-time login
+  // Authenticated user - fetch from Supabase first
+  try {
+    // Check for active subscription
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('status, plan_id')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
+
+    if (subscription) {
+      // User has unlimited subscription
+      localStorage.setItem("subscription", "active");
+      localStorage.setItem("userTier", subscription.plan_id);
+      localStorage.setItem("credits", "unlimited");
+      
+      return {
+        credits: 999, // Display value for unlimited
+        isUnlimited: true,
+        userTier: subscription.plan_id,
+        subscriptionStatus: "active",
+      };
+    }
+
+    // Get total credits from database
+    const { data: creditRecords, error: creditError } = await supabase
+      .from('credits')
+      .select('amount')
+      .eq('user_id', userId);
+
+    if (!creditError && creditRecords) {
+      const totalCredits = creditRecords.reduce((sum, record) => sum + record.amount, 0);
+      
+      // Sync to localStorage
+      localStorage.setItem("credits", totalCredits.toString());
+      
+      // Get user tier from most recent purchase
+      const { data: recentPayment } = await supabase
+        .from('payments')
+        .select('product_id')
+        .eq('user_id', userId)
+        .eq('status', 'succeeded')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (recentPayment) {
+        localStorage.setItem("userTier", recentPayment.product_id);
+      }
+
+      return {
+        credits: totalCredits,
+        isUnlimited: false,
+        userTier: recentPayment?.product_id || null,
+        subscriptionStatus: "none",
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching credits from Supabase:", error);
+    // Fall through to localStorage fallback
+  }
+
+  // Fallback to localStorage if Supabase fails or no records found
   const firstLoginKey = `firstLogin_${userId}`;
   const hasLoggedInBefore = localStorage.getItem(firstLoginKey);
 
@@ -69,13 +131,11 @@ export function initializeUserCredits(userId: string | null): UserCredits {
     return defaultCredits;
   }
 
-  // Returning user - load from localStorage but verify
+  // Returning user - load from localStorage
   const stored = localStorage.getItem("credits");
   const subscription = localStorage.getItem("subscription");
   const tier = localStorage.getItem("userTier");
 
-  // Only trust subscription if there's a valid tier AND it's a verified purchase
-  // For now, we check if tier exists. In Phase 2, verify against Supabase.
   if (subscription === "active" && tier) {
     return {
       credits: 999, // Display value for unlimited
@@ -85,7 +145,7 @@ export function initializeUserCredits(userId: string | null): UserCredits {
     };
   }
 
-  if (stored && !isNaN(parseInt(stored, 10))) {
+  if (stored && stored !== "unlimited" && !isNaN(parseInt(stored, 10))) {
     return {
       credits: parseInt(stored, 10),
       isUnlimited: false,
@@ -135,34 +195,51 @@ export async function verifySubscriptionStatus(userId: string): Promise<{
 }
 
 /**
- * Get total credits from Supabase (Phase 2)
+ * Get total credits from Supabase
  * Sums all credit entries for a user
  */
 export async function getTotalCreditsFromDB(userId: string): Promise<number> {
   try {
-    // Phase 2: Query Supabase credits table
-    // const { data, error } = await supabase
-    //   .from('credits')
-    //   .select('amount')
-    //   .eq('user_id', userId);
+    // Query Supabase credits table
+    const { data, error } = await supabase
+      .from('credits')
+      .select('amount')
+      .eq('user_id', userId);
     
-    // if (error) throw error;
+    if (error) {
+      console.error("Error fetching credits from Supabase:", error);
+      // Fallback to localStorage
+      const stored = localStorage.getItem("credits");
+      return stored && stored !== "unlimited" ? parseInt(stored, 10) : 5;
+    }
     
-    // const total = data?.reduce((sum, record) => sum + record.amount, 0) || 0;
-    // return total;
+    const total = data?.reduce((sum, record) => sum + record.amount, 0) || 0;
     
-    // For now, return localStorage value
-    const stored = localStorage.getItem("credits");
-    return stored ? parseInt(stored, 10) : 5;
+    // Also check for active subscription
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('status, plan_id')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
+    
+    if (subscription) {
+      // User has unlimited subscription
+      return 999; // Display value for unlimited
+    }
+    
+    return total;
   } catch (error) {
     console.error("Error getting credits from DB:", error);
-    return 5; // Default fallback
+    // Fallback to localStorage
+    const stored = localStorage.getItem("credits");
+    return stored && stored !== "unlimited" ? parseInt(stored, 10) : 5;
   }
 }
 
 /**
  * Grant credits after verified purchase
- * Updates both localStorage and Supabase (Phase 2)
+ * Updates both localStorage and Supabase
  */
 export async function grantCredits(
   userId: string | null,
@@ -175,14 +252,31 @@ export async function grantCredits(
     localStorage.setItem("userTier", tier);
     localStorage.setItem("credits", "unlimited");
     
-    // Phase 2: Update Supabase
-    // if (userId) {
-    //   await supabase.from('subscriptions').upsert({
-    //     user_id: userId,
-    //     status: 'active',
-    //     plan_id: tier,
-    //   });
-    // }
+    // Update Supabase
+    if (userId) {
+      try {
+        // Update subscription in Supabase
+        const { error: subError } = await supabase
+          .from('subscriptions')
+          .upsert({
+            user_id: userId,
+            stripe_subscription_id: null, // Will be set by webhook
+            status: 'active',
+            plan_id: tier,
+            current_period_start: new Date().toISOString(),
+            current_period_end: null, // Will be set by webhook
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id',
+          });
+        
+        if (subError) {
+          console.error("Error updating subscription in Supabase:", subError);
+        }
+      } catch (error) {
+        console.error("Error granting unlimited credits:", error);
+      }
+    }
   } else {
     const current = localStorage.getItem("credits");
     const currentAmount = current === "unlimited" ? 0 : (parseInt(current || "0", 10));
@@ -190,14 +284,28 @@ export async function grantCredits(
     localStorage.setItem("credits", newAmount.toString());
     localStorage.setItem("userTier", tier);
     
-    // Phase 2: Insert credit record in Supabase
-    // if (userId) {
-    //   await supabase.from('credits').insert({
-    //     user_id: userId,
-    //     amount: amount,
-    //     source: source,
-    //   });
-    // }
+    // Insert credit record in Supabase
+    if (userId) {
+      try {
+        const { error: creditError } = await supabase
+          .from('credits')
+          .insert({
+            user_id: userId,
+            amount: amount,
+            source: source,
+          });
+        
+        if (creditError) {
+          console.error("Error inserting credits in Supabase:", creditError);
+          // Still update localStorage even if Supabase fails
+        } else {
+          console.log(`✅ Granted ${amount} credits to user ${userId} (source: ${source})`);
+        }
+      } catch (error) {
+        console.error("Error granting credits:", error);
+        // Still update localStorage even if Supabase fails
+      }
+    }
   }
 }
 

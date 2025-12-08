@@ -35,16 +35,20 @@ export default function DashboardPage() {
     else if (hour < 17) setGreeting("Good Afternoon");
     else setGreeting("Good Evening");
 
-    // Verify subscription status using credits manager
-    const userCredits = initializeUserCredits(user?.id || null);
-    // Dashboard is only for CEO Access, so should be unlimited
-    // But verify it's actually active
-    if (userCredits.isUnlimited && userCredits.subscriptionStatus === "active") {
-      setCredits(Infinity);
-    } else {
-      // User shouldn't be here if not subscribed, but handle gracefully
-      router.push("/generate");
-    }
+    // Verify subscription status using credits manager from Supabase
+    const loadCredits = async () => {
+      const userCredits = await initializeUserCredits(user?.id || null);
+      // Dashboard is only for CEO Access, so should be unlimited
+      // But verify it's actually active
+      if (userCredits.isUnlimited && userCredits.subscriptionStatus === "active") {
+        setCredits(Infinity);
+      } else {
+        // User shouldn't be here if not subscribed, but handle gracefully
+        router.push("/generate");
+      }
+    };
+    
+    loadCredits();
   }, [user, router]);
 
   const handleTrendClick = (trend: string) => {

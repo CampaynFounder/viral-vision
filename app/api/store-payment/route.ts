@@ -133,10 +133,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Grant credits based on product purchased
+    // Map product IDs to credit amounts
+    const productCredits: Record<string, number | "unlimited"> = {
+      "viral-starter": 50,
+      "ceo-access": "unlimited",
+      "empire-bundle": 100,
+    };
+
+    const creditsToGrant = productCredits[productId];
+    if (creditsToGrant) {
+      if (creditsToGrant === "unlimited") {
+        // Create/update subscription
+        await supabase
+          .from("subscriptions")
+          .upsert({
+            user_id: userId,
+            status: "active",
+            plan_id: productId,
+            current_period_start: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: "user_id",
+          });
+      } else {
+        // Insert credit record
+        await supabase
+          .from("credits")
+          .insert({
+            user_id: userId,
+            amount: creditsToGrant,
+            source: "purchase",
+          });
+      }
+      console.log(`✅ Granted ${creditsToGrant} credits to user ${userId} for product ${productId}`);
+    }
+
     return NextResponse.json({
       success: true,
       paymentId: paymentData.id,
       message: "Payment stored successfully",
+      creditsGranted: creditsToGrant || null,
     });
   } catch (error: any) {
     console.error("Error in store-payment API:", error);

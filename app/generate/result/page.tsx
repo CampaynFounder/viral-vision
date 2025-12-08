@@ -29,9 +29,19 @@ export default function ResultPage() {
 
   useEffect(() => {
     // Load credits and generation count
-    const userCredits = initializeUserCredits(user?.id || null);
-    setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
-    setIsUnlimited(userCredits.isUnlimited);
+    const loadCredits = async () => {
+      if (user?.id) {
+        const userCredits = await initializeUserCredits(user.id);
+        setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
+        setIsUnlimited(userCredits.isUnlimited);
+      } else {
+        const userCredits = await initializeUserCredits(null);
+        setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
+        setIsUnlimited(userCredits.isUnlimited);
+      }
+    };
+    
+    loadCredits();
     
     const storedGenerations = localStorage.getItem("totalGenerations");
     if (storedGenerations) {
@@ -122,17 +132,31 @@ export default function ResultPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleGenerateAnother = () => {
+  const handleGenerateAnother = async () => {
     hapticMedium();
     
-    // Check credits
-    const currentCredits = credits === Infinity ? 999 : credits;
-    const isFirstTimeUser = totalGenerations === 0;
-    
-    // If user has 0 credits (first-time user) or 5 or less credits, show upgrade
-    if (currentCredits === 0 || (currentCredits <= 5 && !isUnlimited)) {
-      setShowUpgradeModal(true);
-      return;
+    // Refresh credits from Supabase before checking
+    if (user?.id) {
+      const userCredits = await initializeUserCredits(user.id);
+      const refreshedCredits = userCredits.isUnlimited ? Infinity : userCredits.credits;
+      setCredits(refreshedCredits);
+      setIsUnlimited(userCredits.isUnlimited);
+      
+      // Check credits with refreshed values
+      const currentCredits = refreshedCredits === Infinity ? 999 : refreshedCredits;
+      
+      // If user has 0 credits (first-time user) or 5 or less credits, show upgrade
+      if (currentCredits === 0 || (currentCredits <= 5 && !userCredits.isUnlimited)) {
+        setShowUpgradeModal(true);
+        return;
+      }
+    } else {
+      // Not authenticated - check localStorage
+      const currentCredits = credits === Infinity ? 999 : credits;
+      if (currentCredits === 0 || (currentCredits <= 5 && !isUnlimited)) {
+        setShowUpgradeModal(true);
+        return;
+      }
     }
     
     // User has enough credits, proceed to generate

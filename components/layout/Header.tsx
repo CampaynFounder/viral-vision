@@ -19,16 +19,20 @@ export default function Header() {
   const [hasPlayed, setHasPlayed] = useState(false);
 
   useEffect(() => {
-    // Use credits manager to properly initialize credits
-    const userCredits = initializeUserCredits(user?.id || null);
-    setCredits(userCredits.isUnlimited ? 999 : userCredits.credits);
-    setIsUnlimited(userCredits.isUnlimited);
-    setUserTier(userCredits.userTier);
+    // Use credits manager to properly initialize credits from Supabase
+    const loadCredits = async () => {
+      const userCredits = await initializeUserCredits(user?.id || null);
+      setCredits(userCredits.isUnlimited ? 999 : userCredits.credits);
+      setIsUnlimited(userCredits.isUnlimited);
+      setUserTier(userCredits.userTier);
+    };
+    
+    loadCredits();
     
     // Listen for credit and tier updates (when user navigates between pages)
-    const handleStorageChange = () => {
+    const handleStorageChange = async () => {
       // Re-initialize credits to ensure accuracy
-      const userCredits = initializeUserCredits(user?.id || null);
+      const userCredits = await initializeUserCredits(user?.id || null);
       setCredits(userCredits.isUnlimited ? 999 : userCredits.credits);
       setIsUnlimited(userCredits.isUnlimited);
       setUserTier(userCredits.userTier);
@@ -42,7 +46,7 @@ export default function Header() {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("focus", handleStorageChange);
     };
-  }, [pathname]); // Re-check when route changes
+  }, [pathname, user]); // Re-check when route changes or user changes
 
   // Handle video playback on first login
   useEffect(() => {

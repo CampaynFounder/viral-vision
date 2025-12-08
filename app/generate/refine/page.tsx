@@ -68,10 +68,14 @@ export default function RefinePage() {
       userInput: parsed.input,
     });
 
-    // Load credits and generation count using credits manager
-    const userCredits = initializeUserCredits(user?.id || null);
-    setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
-    setIsUnlimited(userCredits.isUnlimited);
+    // Load credits and generation count using credits manager from Supabase
+    const loadCredits = async () => {
+      const userCredits = await initializeUserCredits(user?.id || null);
+      setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
+      setIsUnlimited(userCredits.isUnlimited);
+    };
+    
+    loadCredits();
 
     const storedGenerations = localStorage.getItem("totalGenerations");
     if (storedGenerations) {

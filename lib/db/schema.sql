@@ -12,9 +12,9 @@ CREATE TABLE IF NOT EXISTS public.users (
 -- Credits table
 CREATE TABLE IF NOT EXISTS public.credits (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   amount INTEGER NOT NULL DEFAULT 0,
-  source TEXT, -- 'purchase', 'subscription', 'bonus'
+  source TEXT, -- 'purchase', 'subscription', 'bonus', 'usage', 'admin_adjustment', 'refund', 'correction'
   expires_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

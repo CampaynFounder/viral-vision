@@ -41,17 +41,21 @@ export default function GeneratePage() {
   const [credits, setCredits] = useState(50);
   const [showTopUp, setShowTopUp] = useState(false);
 
-  // Load credits and generation count from localStorage
+  // Load credits and generation count from Supabase
   useEffect(() => {
-    // Use credits manager to properly initialize credits
-    const userCredits = initializeUserCredits(user?.id || null);
-    setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
+    // Use credits manager to properly initialize credits from Supabase
+    const loadCredits = async () => {
+      const userCredits = await initializeUserCredits(user?.id || null);
+      setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
+    };
+    
+    loadCredits();
 
     // Initialize generation count if not exists
     if (!localStorage.getItem("totalGenerations")) {
       localStorage.setItem("totalGenerations", "0");
     }
-  }, []);
+  }, [user]);
 
   const handleLowBalance = () => {
     if (credits > 0 && credits <= 5) {

@@ -31,22 +31,25 @@ export default function ProfilePage() {
     // Load user data
     setEmail(user.email || "");
     
-    // Load credits and stats using credits manager
-    const { initializeUserCredits } = require("@/lib/utils/credits-manager");
-    const userCredits = initializeUserCredits(user?.id || null);
-    setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
-    setSubscriptionStatus(userCredits.subscriptionStatus);
+    // Load credits and stats using credits manager from Supabase
+    const loadCredits = async () => {
+      const userCredits = await initializeUserCredits(user?.id || null);
+      setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
+      setSubscriptionStatus(userCredits.subscriptionStatus);
+      
+      // Load unlimited user stats if subscribed
+      if (userCredits.subscriptionStatus === "active" && user?.id) {
+        const stats = getUnlimitedUserStats(user.id);
+        setUnlimitedStats(stats);
+      }
+    };
+    
+    loadCredits();
     
     const storedGenerations = localStorage.getItem("totalGenerations");
     
     if (storedGenerations) {
       setTotalGenerations(parseInt(storedGenerations, 10));
-    }
-
-    // Load unlimited user stats if subscribed
-    if (userCredits.subscriptionStatus === "active" && user?.id) {
-      const stats = getUnlimitedUserStats(user.id);
-      setUnlimitedStats(stats);
     }
 
     // Phase 2: Load display name from Supabase
