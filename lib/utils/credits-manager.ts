@@ -19,9 +19,9 @@ export interface UserCredits {
  * Clears stale localStorage data and sets proper defaults
  */
 export function initializeUserCredits(userId: string | null): UserCredits {
-  // For new users, start with 50 free credits
+  // For new users, start with 5 free credits (designed to convert after first prompt)
   const defaultCredits: UserCredits = {
-    credits: 50,
+    credits: 5,
     isUnlimited: false,
     userTier: null,
     subscriptionStatus: "none",
@@ -63,7 +63,7 @@ export function initializeUserCredits(userId: string | null): UserCredits {
     // First time login - clear any stale data and set defaults
     localStorage.removeItem("subscription");
     localStorage.removeItem("userTier");
-    localStorage.setItem("credits", "50");
+    localStorage.setItem("credits", "5");
     localStorage.setItem(firstLoginKey, "true");
     
     return defaultCredits;
@@ -153,10 +153,10 @@ export async function getTotalCreditsFromDB(userId: string): Promise<number> {
     
     // For now, return localStorage value
     const stored = localStorage.getItem("credits");
-    return stored ? parseInt(stored, 10) : 50;
+    return stored ? parseInt(stored, 10) : 5;
   } catch (error) {
     console.error("Error getting credits from DB:", error);
-    return 50; // Default fallback
+    return 5; // Default fallback
   }
 }
 
