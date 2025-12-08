@@ -6,13 +6,13 @@ import { AuthProvider } from "@/lib/contexts/AuthContext";
 import SessionTimeoutProvider from "@/components/providers/SessionTimeoutProvider";
 
 export const metadata: Metadata = {
-  title: "Viral Vision - Generate Viral Luxury Content Prompts",
-  description: "Stop Guessing. Start Posting. Generate viral luxury content prompts with Black Luxury aesthetics.",
+  title: "VVS Prompts: Soft Life Software for the Hyper-Realistic AI Influencer",
+  description: "Generate and Monetize Viral luxury content prompts with Modern Luxury aesthetics - No Guesswork.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Viral Vision",
+    title: "VVS Prompts",
   },
 };
 
