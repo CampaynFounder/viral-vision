@@ -164,7 +164,7 @@ BEGIN
       NEW.created_at,
       NOW()
     )
-    ON CONFLICT (public.subscriptions.user_id) DO UPDATE
+    ON CONFLICT (user_id) DO UPDATE
     SET 
       status = 'active',
       plan_id = NEW.product_id,
