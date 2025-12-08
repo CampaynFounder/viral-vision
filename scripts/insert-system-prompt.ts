@@ -56,6 +56,12 @@ Hair Color: \${wizardData?.hairColor || 'Not specified'}
 
 Eyebrow Effect: \${wizardData?.eyebrowEffect || 'Not specified'}
 
+Action: \${wizardData?.action || 'Not specified'}
+
+Camera Movement: \${wizardData?.cameraMovement || 'Not specified'}
+
+Video Negative Prompts: \${wizardData?.videoNegativePrompts && Array.isArray(wizardData.videoNegativePrompts) && wizardData.videoNegativePrompts.length > 0 ? wizardData.videoNegativePrompts.join(", ") : 'None'}
+
 Target Model: \${model}
 
 Advanced Options: \${wizardData ? JSON.stringify(wizardData) : 'None'}
@@ -74,9 +80,34 @@ Analyze the user selections for logical or aesthetic conflicts (e.g., "Shot Type
 
 - IF inputs are missing, infer them based on the "Black Luxury" core directive (e.g., if Aesthetic is missing, default to "Old Money" or "Streetwear High-Fashion").
 
-## 2. Image Prompt Engineering
+## 2. Prompt Engineering
 
-Construct a prompt optimized specifically for **\${model}**.
+IF Format is "video":
+  Construct a temporal narrative prompt optimized for video generation:
+  
+  **Structure:** \`[Subject & Description], [Specific Action], [Environment], [Camera Movement], [Lighting/Mood]\`
+  
+  - **Subject:** Define the look (e.g., "An elegant Black woman in a silk gown").
+  
+  - **Action (CRITICAL):** Define *physics-based* movement. Avoid "static" poses.
+    - *Good:* "Walking confidently toward camera," "Sipping champagne," "Wind blowing through hair," "Laughing naturally," "Dancing gracefully."
+    - *Bad:* "Standing," "Posing," "Static," "Still."
+    - IF user provided action: Use it. IF not provided: Infer a dynamic action based on aesthetic and wardrobe.
+  
+  - **Camera Control:** Explicitly command the lens.
+    - Use keywords: "Static camera," "Slow push-in," "Truck left," "Orbit," "Low angle tracking shot."
+    - IF user provided camera movement: Use it. IF not: Default to "Slow push-in" for luxury aesthetic.
+  
+  - **Environment:** Define the setting that complements the action.
+  
+  - **Lighting/Mood:** Define lighting that complements darker skin tones and the action.
+  
+  - **Video-Specific Negative Prompting:** Instruct to avoid "morphing," "distorted hands," "glitching," "too much movement," "static image," "jittery motion," "unnatural movement," "frame inconsistencies."
+    - IF user provided video negative prompts: Include them.
+    - ALWAYS include: "static image," "morphing," "glitching," "distorted hands."
+
+ELSE (Format is "image"):
+  Construct a prompt optimized specifically for **\${model}**.
 
 - **Subject:** Define a hyper-realistic African American influencer. Focus on skin texture (pores, slight imperfections for realism), distinct facial features, and confidence.
 

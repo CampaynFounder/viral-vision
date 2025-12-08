@@ -144,27 +144,33 @@ You must translate vague or specific user inputs into a cohesive, viral-ready as
 
 <user_selections>
 
-Aesthetic: ${aesthetic?.name || aesthetic?.id || 'Not specified'}
+Aesthetic: \${aesthetic?.name || aesthetic?.id || 'Not specified'}
 
-Shot Type: ${shotType?.name || shotType?.id || 'Not specified'}
+Shot Type: \${shotType?.name || shotType?.id || 'Not specified'}
 
-Wardrobe: ${wardrobe?.name || wardrobe?.id || 'Not specified'}
+Wardrobe: \${wardrobe?.name || wardrobe?.id || 'Not specified'}
 
-Format: ${wizardData?.format || 'image'}
+Format: \${wizardData?.format || 'image'}
 
-Race: ${wizardData?.race || 'African American (default)'}
+Race: \${wizardData?.race || 'African American (default)'}
 
-Skin Tone: ${wizardData?.skinTone || 'Not specified'}
+Skin Tone: \${wizardData?.skinTone || 'Not specified'}
 
-Hair Color: ${wizardData?.hairColor || 'Not specified'}
+Hair Color: \${wizardData?.hairColor || 'Not specified'}
 
-Eyebrow Effect: ${wizardData?.eyebrowEffect || 'Not specified'}
+Eyebrow Effect: \${wizardData?.eyebrowEffect || 'Not specified'}
 
-Target Model: ${model}
+Action: \${wizardData?.action || 'Not specified'}
 
-Advanced Options: ${wizardData ? JSON.stringify(wizardData) : 'None'}
+Camera Movement: \${wizardData?.cameraMovement || 'Not specified'}
 
-Negative Prompts (User Specified): ${wizardData?.negativePrompts && Array.isArray(wizardData.negativePrompts) && wizardData.negativePrompts.length > 0 ? wizardData.negativePrompts.join(", ") : 'None - generate recommendations based on best practices'}
+Video Negative Prompts: \${wizardData?.videoNegativePrompts && Array.isArray(wizardData.videoNegativePrompts) && wizardData.videoNegativePrompts.length > 0 ? wizardData.videoNegativePrompts.join(", ") : 'None'}
+
+Target Model: \${model}
+
+Advanced Options: \${wizardData ? JSON.stringify(wizardData) : 'None'}
+
+Negative Prompts (User Specified): \${wizardData?.negativePrompts && Array.isArray(wizardData.negativePrompts) && wizardData.negativePrompts.length > 0 ? wizardData.negativePrompts.join(", ") : 'None - generate recommendations based on best practices'}
 
 </user_selections>
 
@@ -178,9 +184,34 @@ Analyze the user selections for logical or aesthetic conflicts (e.g., "Shot Type
 
 - IF inputs are missing, infer them based on the "Black Luxury" core directive (e.g., if Aesthetic is missing, default to "Old Money" or "Streetwear High-Fashion").
 
-## 2. Image Prompt Engineering
+## 2. Prompt Engineering
 
-Construct a prompt optimized specifically for **${model}**.
+IF Format is "video":
+  Construct a temporal narrative prompt optimized for video generation:
+  
+  **Structure:** \`[Subject & Description], [Specific Action], [Environment], [Camera Movement], [Lighting/Mood]\`
+  
+  - **Subject:** Define the look (e.g., "An elegant Black woman in a silk gown").
+  
+  - **Action (CRITICAL):** Define *physics-based* movement. Avoid "static" poses.
+    - *Good:* "Walking confidently toward camera," "Sipping champagne," "Wind blowing through hair," "Laughing naturally," "Dancing gracefully."
+    - *Bad:* "Standing," "Posing," "Static," "Still."
+    - IF user provided action: Use it. IF not provided: Infer a dynamic action based on aesthetic and wardrobe.
+  
+  - **Camera Control:** Explicitly command the lens.
+    - Use keywords: "Static camera," "Slow push-in," "Truck left," "Orbit," "Low angle tracking shot."
+    - IF user provided camera movement: Use it. IF not: Default to "Slow push-in" for luxury aesthetic.
+  
+  - **Environment:** Define the setting that complements the action.
+  
+  - **Lighting/Mood:** Define lighting that complements darker skin tones and the action.
+  
+  - **Video-Specific Negative Prompting:** Instruct to avoid "morphing," "distorted hands," "glitching," "too much movement," "static image," "jittery motion," "unnatural movement," "frame inconsistencies."
+    - IF user provided video negative prompts: Include them.
+    - ALWAYS include: "static image," "morphing," "glitching," "distorted hands."
+
+ELSE (Format is "image"):
+  Construct a prompt optimized specifically for **${model}**.
 
 - **Subject:** Define a hyper-realistic African American influencer. Focus on skin texture (pores, slight imperfections for realism), distinct facial features, and confidence.
 
@@ -223,7 +254,19 @@ Construct a prompt optimized specifically for **${model}**.
 
 ## 4. Final Sanity Check
 
-Review your generated prompt against the original user inputs. Ensure no hallucinated objects appear that contradict the "Luxury" vibe (e.g., messy backgrounds, cheap fabrics).
+IF Format is "video":
+  - **Action Check:** Does the prompt contain an ACTION verb? (e.g., "walking," "laughing," "dancing," "moving"). 
+    - IF NOT: Add a dynamic action verb. NEVER allow static poses.
+    - Check that action is physics-based and natural.
+  
+  - **Camera Check:** Is camera movement specified? If not, suggest one.
+  
+  - **Video Quality Check:** Ensure no static elements that would result in a still image.
+  
+  - Review your generated prompt against the original user inputs. Ensure the action is appropriate for the luxury aesthetic.
+
+ELSE (Format is "image"):
+  Review your generated prompt against the original user inputs. Ensure no hallucinated objects appear that contradict the "Luxury" vibe (e.g., messy backgrounds, cheap fabrics).
 
 # Output Format
 
@@ -268,6 +311,9 @@ Return valid JSON only. Do not include markdown code blocks (\`\`\`json).
       .replace(/\${wizardData\?\.skinTone \|\| 'Not specified'}/g, wizardData?.skinTone || 'Not specified')
       .replace(/\${wizardData\?\.hairColor \|\| 'Not specified'}/g, wizardData?.hairColor || 'Not specified')
       .replace(/\${wizardData\?\.eyebrowEffect \|\| 'Not specified'}/g, wizardData?.eyebrowEffect || 'Not specified')
+      .replace(/\${wizardData\?\.action \|\| 'Not specified'}/g, wizardData?.action || 'Not specified')
+      .replace(/\${wizardData\?\.cameraMovement \|\| 'Not specified'}/g, wizardData?.cameraMovement || 'Not specified')
+      .replace(/\${wizardData\?\.videoNegativePrompts && Array\.isArray\(wizardData\.videoNegativePrompts\) && wizardData\.videoNegativePrompts\.length > 0 \? wizardData\.videoNegativePrompts\.join\(", "\) : 'None'}/g, wizardData?.videoNegativePrompts && Array.isArray(wizardData.videoNegativePrompts) && wizardData.videoNegativePrompts.length > 0 ? wizardData.videoNegativePrompts.join(", ") : 'None')
       .replace(/\${model}/g, model)
       .replace(/\${wizardData \? JSON\.stringify\(wizardData\) : 'None'}/g, wizardData ? JSON.stringify(wizardData) : 'None')
       .replace(/\${wizardData\?\.negativePrompts && Array\.isArray\(wizardData\.negativePrompts\) && wizardData\.negativePrompts\.length > 0 \? wizardData\.negativePrompts\.join\(", "\) : 'None - generate recommendations based on best practices'}/g, wizardData?.negativePrompts && Array.isArray(wizardData.negativePrompts) && wizardData.negativePrompts.length > 0 ? wizardData.negativePrompts.join(", ") : 'None - generate recommendations based on best practices');

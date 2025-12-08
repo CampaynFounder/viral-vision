@@ -502,6 +502,68 @@ export default function RefinePage() {
           </div>
         </div>
 
+        {/* Video-Specific Fields - Only show when format is "video" */}
+        {wizardData.format === "video" && (
+          <div className="mb-6 sm:mb-8">
+            <h3 className="body-luxury text-xs text-mocha-light mb-4">Video Details</h3>
+            <div className="space-y-4 bg-white rounded-2xl p-4 sm:p-6 border border-stone-200">
+              {/* Action Field - CRITICAL for video */}
+              <WizardField
+                label="Action"
+                description="Required for video - Describe physics-based movement (e.g., 'walking confidently', 'sipping champagne', 'wind blowing through hair'). Avoid static poses."
+                type="text"
+                value={wizardData.action || ""}
+                onChange={(value) => updateWizardData("action", value)}
+                placeholder="e.g., walking confidently toward camera, sipping champagne..."
+                isOptional={false}
+              />
+
+              {/* Camera Movement */}
+              <WizardField
+                label="Camera Movement"
+                description="Optional - Control camera movement"
+                type="select"
+                options={[
+                  "Static camera",
+                  "Slow push-in",
+                  "Truck left",
+                  "Truck right",
+                  "Orbit",
+                  "Low angle tracking shot",
+                  "Dolly forward",
+                  "Dolly backward",
+                  "Crane up",
+                  "Pan left",
+                  "Pan right"
+                ]}
+                value={wizardData.cameraMovement || ""}
+                onChange={(value) => updateWizardData("cameraMovement", value)}
+                isOptional={true}
+              />
+
+              {/* Video-Specific Negative Prompts */}
+              <WizardField
+                label="Video Exclusions"
+                description="Optional - Video-specific things to avoid"
+                type="multi-select"
+                options={[
+                  "morphing",
+                  "distorted hands",
+                  "glitching",
+                  "too much movement",
+                  "static image",
+                  "jittery motion",
+                  "unnatural movement",
+                  "frame inconsistencies"
+                ]}
+                value={wizardData.videoNegativePrompts || []}
+                onChange={(value) => updateWizardData("videoNegativePrompts", value)}
+                isOptional={true}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Advanced Options Toggle */}
         <motion.button
           whileHover={{ scale: 1.02 }}

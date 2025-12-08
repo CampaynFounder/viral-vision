@@ -1,0 +1,47 @@
+
+> project-26@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.2
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 1994ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+   Generating static pages (0/12) ...
+   Generating static pages (3/12) 
+   Generating static pages (6/12) 
+   Generating static pages (9/12) 
+ ✓ Generating static pages (12/12)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    1.32 kB         140 kB
+├ ○ /_not-found                            995 B         103 kB
+├ ƒ /api/checkout                          141 B         102 kB
+├ ƒ /api/create-payment-intent             141 B         102 kB
+├ ƒ /api/generate-prompt                   141 B         102 kB
+├ ƒ /api/sanity-check                      141 B         102 kB
+├ ƒ /api/system-prompt                     141 B         102 kB
+├ ƒ /api/webhooks/stripe                   141 B         102 kB
+├ ○ /auth                                4.64 kB         198 kB
+├ ƒ /auth/callback                         141 B         102 kB
+├ ○ /checkout                            12.5 kB         205 kB
+├ ○ /dashboard                           2.36 kB         199 kB
+├ ○ /generate                             3.3 kB         200 kB
+├ ○ /generate/refine                     14.8 kB         208 kB
+├ ○ /generate/result                     2.44 kB         141 kB
+├ ○ /portfolio                           1.83 kB         140 kB
+├ ○ /profile                             3.77 kB         197 kB
+└ ƒ /recipe/[slug]                         141 B         102 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/493-69393df6a846909a.js       45.7 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.99 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

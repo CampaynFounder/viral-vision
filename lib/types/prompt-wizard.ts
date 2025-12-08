@@ -41,6 +41,11 @@ export interface PromptWizardData {
   hairColor?: "Black" | "Blonde" | "Burgundy" | "Neon" | "Brown" | "Red" | "Other"; // Hair color
   eyebrowEffect?: string; // Eyebrow enhancement effect
   
+  // Video-Specific Fields (only used when format === "video")
+  action?: string; // Physics-based movement (e.g., "walking confidently", "sipping champagne")
+  cameraMovement?: string; // Camera control keywords (e.g., "slow push-in", "truck left", "orbit")
+  videoNegativePrompts?: string[]; // Video-specific negative prompts
+  
   // Step 2: Pose & Body Language
   pose?: string[]; // ["relaxed", "confident", "elegant", "dynamic"]
   bodyLanguage?: string; // "leaning forward", "arms crossed", "open posture"
