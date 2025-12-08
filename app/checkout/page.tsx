@@ -17,18 +17,6 @@ function CheckoutContent() {
   const stripe = useStripe();
   const elements = useElements();
   const { user } = useAuth();
-  
-  // Guard against Stripe not being loaded
-  if (!stripe || !elements) {
-    return (
-      <div className="min-h-screen bg-alabaster p-6 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-mocha mb-4">Loading payment system...</p>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-champagne mx-auto"></div>
-        </div>
-      </div>
-    );
-  }
   const productId = searchParams.get("product") || "viral-starter";
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -43,6 +31,18 @@ function CheckoutContent() {
     setSelectedTier(tier || pricingTiers[0]);
   }, [productId]);
 
+  // Guard against Stripe not being loaded (after all hooks)
+  if (!stripe || !elements) {
+    return (
+      <div className="min-h-screen bg-alabaster p-6 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-mocha mb-4">Loading payment system...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-champagne mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
   const handleCheckout = () => {
     hapticMedium();
     setShowCheckout(true);
@@ -50,7 +50,7 @@ function CheckoutContent() {
 
   const handlePaymentSubmit = async () => {
     if (!stripe || !elements || !selectedTier) {
-      setError("Stripe not loaded. Please refresh the page.");
+      setError("Payment system is loading. Please wait a moment and try again.");
       return;
     }
 
@@ -294,7 +294,13 @@ function CheckoutContent() {
                 <label className="body-luxury text-xs font-semibold mb-2 block" style={{ color: '#1C1917', fontWeight: '600' }}>
                   Card Details
                 </label>
-                <StripeCardElement onCardChange={setCardComplete} />
+                {stripe && elements ? (
+                  <StripeCardElement onCardChange={setCardComplete} />
+                ) : (
+                  <div className="p-4 border-2 border-stone-300 rounded-xl bg-stone-50">
+                    <p className="text-sm text-mocha">Loading payment form...</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -319,20 +325,20 @@ function CheckoutContent() {
             )}
             <button
               onClick={handlePaymentSubmit}
-              disabled={!cardComplete || processing}
+              disabled={!cardComplete || processing || !stripe || !elements}
               className={`w-full py-4 rounded-xl font-semibold touch-target transition-colors overflow-hidden ${
-                !cardComplete || processing
+                !cardComplete || processing || !stripe || !elements
                   ? "bg-stone-200 cursor-not-allowed"
                   : "bg-champagne text-white hover:bg-champagne-dark"
               }`}
               style={
-                !cardComplete || processing
+                !cardComplete || processing || !stripe || !elements
                   ? { backgroundColor: "#E7E5E4", color: "#1C1917", maxWidth: '100%', fontWeight: '700' }
                   : { backgroundColor: "#D4AF37", color: "#FFFFFF", maxWidth: '100%', fontWeight: '700' }
               }
             >
-              <span className="truncate block font-bold" style={{ color: !cardComplete || processing ? '#1C1917' : '#FFFFFF' }}>
-                {processing ? "Processing..." : "Complete Purchase"}
+              <span className="truncate block font-bold" style={{ color: !cardComplete || processing || !stripe || !elements ? '#1C1917' : '#FFFFFF' }}>
+                {!stripe || !elements ? "Loading..." : processing ? "Processing..." : "Complete Purchase"}
               </span>
             </button>
             <p className="text-xs text-center mt-4 font-medium" style={{ color: '#1C1917' }}>

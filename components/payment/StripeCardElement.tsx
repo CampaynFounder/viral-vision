@@ -12,6 +12,15 @@ export default function StripeCardElement({ onCardChange }: StripeCardElementPro
   const elements = useElements();
   const [cardError, setCardError] = useState<string | null>(null);
 
+  // Guard against Stripe not being loaded
+  if (!stripe || !elements) {
+    return (
+      <div className="p-4 border-2 border-stone-300 rounded-xl bg-stone-50">
+        <p className="text-sm text-mocha">Loading payment form...</p>
+      </div>
+    );
+  }
+
   const cardElementOptions = {
     style: {
       base: {
