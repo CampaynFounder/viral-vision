@@ -10,6 +10,7 @@ interface CreditCostDisplayProps {
   className?: string;
   showBonusIndicator?: boolean;
   isFirstPrompt?: boolean;
+  onClaimBonus?: () => void;
 }
 
 export default function CreditCostDisplay({
@@ -19,6 +20,7 @@ export default function CreditCostDisplay({
   className = "",
   showBonusIndicator = false,
   isFirstPrompt = false,
+  onClaimBonus,
 }: CreditCostDisplayProps) {
   const canAfford = isUnlimited || currentCredits >= cost.totalCost;
   const remainingAfter = isUnlimited ? Infinity : currentCredits - cost.totalCost;
@@ -33,17 +35,30 @@ export default function CreditCostDisplay({
     >
       {/* First-Time Bonus Indicator */}
       {showBonusIndicator && isFirstPrompt && !canAfford && (
-        <div className="mb-4 p-3 bg-champagne/10 border-2 border-champagne/30 rounded-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">🎁</span>
-            <span className="text-sm font-semibold text-champagne-dark" style={{ color: '#B8941F' }}>
-              First-Time Bonus Available
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mb-4 p-4 bg-champagne/20 border-2 border-champagne rounded-xl shadow-lg"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">🎁</span>
+            <span className="text-base font-bold text-champagne-dark" style={{ color: '#B8941F' }}>
+              First-Time Bonus Available!
             </span>
           </div>
-          <p className="text-xs text-mocha-light" style={{ color: '#6B5A42' }}>
-            You'll receive {cost.totalCost - currentCredits} free credits when you're ready to generate
+          <p className="text-sm text-mocha-dark font-medium mb-3" style={{ color: '#1C1917' }}>
+            Get {cost.totalCost - currentCredits} free credits to complete your first prompt
           </p>
-        </div>
+          {onClaimBonus && (
+            <button
+              onClick={onClaimBonus}
+              className="w-full py-2.5 bg-champagne text-white rounded-lg text-sm font-semibold hover:bg-champagne-dark transition-colors touch-target shadow-md"
+              style={{ backgroundColor: '#D4AF37', color: '#FFFFFF' }}
+            >
+              🎁 Claim {cost.totalCost - currentCredits} Free Credits
+            </button>
+          )}
+        </motion.div>
       )}
       <div className="flex items-center justify-between mb-3">
         <span className="body-luxury text-xs text-mocha-light">Generation Cost</span>
@@ -96,9 +111,20 @@ export default function CreditCostDisplay({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mt-3 p-2 bg-red-100 rounded-lg text-xs text-red-700"
+          className="mt-3 p-3 bg-red-100 rounded-lg"
         >
-          Not enough credits. Upgrade to continue!
+          <p className="text-xs text-red-700 mb-2">
+            Not enough credits. {showBonusIndicator && isFirstPrompt ? "Claim your first-time bonus to continue!" : "Upgrade to continue!"}
+          </p>
+          {showBonusIndicator && isFirstPrompt && onClaimBonus && (
+            <button
+              onClick={onClaimBonus}
+              className="w-full py-2 bg-champagne text-white rounded-lg text-sm font-semibold hover:bg-champagne-dark transition-colors touch-target"
+              style={{ backgroundColor: '#D4AF37', color: '#FFFFFF' }}
+            >
+              🎁 Claim 5 Free Credits
+            </button>
+          )}
         </motion.div>
       )}
     </motion.div>

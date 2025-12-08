@@ -804,6 +804,20 @@ export default function RefinePage() {
             isUnlimited={credits === Infinity}
             showBonusIndicator={!hasReceivedBonus && totalGenerations === 0}
             isFirstPrompt={totalGenerations === 0}
+            onClaimBonus={() => {
+              const userId = user?.id || null;
+              const isFirstPrompt = totalGenerations === 0;
+              const eligibleForBonus = isEligibleForFirstTimeBonus(
+                userId,
+                credits,
+                creditCost.totalCost,
+                totalGenerations
+              );
+              
+              if (eligibleForBonus && isFirstPrompt) {
+                setShowBonusModal(true);
+              }
+            }}
           />
           {conversionMessage && (
             <motion.div
@@ -823,30 +837,77 @@ export default function RefinePage() {
         </div>
 
         {/* Continue Button */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleContinue}
-          disabled={!validation.isValid || (credits !== Infinity && credits < creditCost.totalCost) || status !== null}
-          className={`w-full py-4 sm:py-4 rounded-2xl text-base sm:text-lg font-semibold touch-target min-h-[52px] transition-colors overflow-hidden ${
-            !validation.isValid || (credits !== Infinity && credits < creditCost.totalCost) || status !== null
-              ? "bg-stone-300 text-stone-700 cursor-not-allowed"
-              : "bg-champagne text-white hover:bg-champagne-dark"
-          }`}
-          style={
-            !validation.isValid || (credits !== Infinity && credits < creditCost.totalCost) || status !== null
-              ? { backgroundColor: "#D1D5DB", color: "#44403C", maxWidth: '100%' }
-              : { backgroundColor: "#D4AF37", color: "#FFFFFF", maxWidth: '100%' }
+        {(() => {
+          const userId = user?.id || null;
+          const isFirstPrompt = totalGenerations === 0;
+          const needsCredits = credits !== Infinity && credits < creditCost.totalCost;
+          const eligibleForBonus = !hasReceivedBonus && isFirstPrompt && needsCredits && isEligibleForFirstTimeBonus(
+            userId,
+            credits,
+            creditCost.totalCost,
+            totalGenerations
+          );
+          
+          // Debug logging (remove in production if needed)
+          if (needsCredits && isFirstPrompt) {
+            console.log("Bonus eligibility check:", {
+              hasReceivedBonus,
+              isFirstPrompt,
+              needsCredits,
+              credits,
+              creditCost: creditCost.totalCost,
+              totalGenerations,
+              eligibleForBonus,
+              userId
+            });
           }
-        >
-          <span className="truncate block">
-            {status
-              ? statusMessages[status]
-              : credits !== Infinity && credits < creditCost.totalCost
-              ? "Not Enough Credits"
-              : "Continue"}
-          </span>
-        </motion.button>
+          
+          return (
+            <>
+              {eligibleForBonus && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    hapticMedium();
+                    setShowBonusModal(true);
+                  }}
+                  disabled={status !== null}
+                  className="w-full py-4 sm:py-4 rounded-2xl text-base sm:text-lg font-semibold touch-target min-h-[52px] transition-colors overflow-hidden mb-3 bg-champagne text-white hover:bg-champagne-dark shadow-lg"
+                  style={{ backgroundColor: "#D4AF37", color: "#FFFFFF", maxWidth: '100%' }}
+                >
+                  <span className="truncate block">
+                    🎁 Claim 5 Free Credits & Generate
+                  </span>
+                </motion.button>
+              )}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleContinue}
+                disabled={!validation.isValid || needsCredits || status !== null}
+                className={`w-full py-4 sm:py-4 rounded-2xl text-base sm:text-lg font-semibold touch-target min-h-[52px] transition-colors overflow-hidden ${
+                  !validation.isValid || needsCredits || status !== null
+                    ? "bg-stone-300 text-stone-700 cursor-not-allowed"
+                    : "bg-champagne text-white hover:bg-champagne-dark"
+                }`}
+                style={
+                  !validation.isValid || needsCredits || status !== null
+                    ? { backgroundColor: "#D1D5DB", color: "#44403C", maxWidth: '100%' }
+                    : { backgroundColor: "#D4AF37", color: "#FFFFFF", maxWidth: '100%' }
+                }
+              >
+                <span className="truncate block">
+                  {status
+                    ? statusMessages[status]
+                    : needsCredits
+                    ? eligibleForBonus ? "Or Continue Without Bonus" : "Not Enough Credits"
+                    : "Continue"}
+                </span>
+              </motion.button>
+            </>
+          );
+        })()}
       </div>
 
       {/* First-Time Bonus Modal */}
