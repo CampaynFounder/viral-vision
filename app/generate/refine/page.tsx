@@ -275,6 +275,8 @@ export default function RefinePage() {
           // Store full OpenAI response for debugging/display
           openaiFullResponse: result._debug?.rawOpenAIResponse || null,
           openaiParsedContent: result._debug?.parsedContent || null,
+          openaiSystemPrompt: result._debug?.systemPrompt || null,
+          openaiUserMessage: result._debug?.userMessage || null,
           openaiDebug: result._debug || null,
         })
       );

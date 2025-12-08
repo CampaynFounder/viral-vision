@@ -81,6 +81,8 @@ export default function ResultPage() {
         setOpenAIResponseData({
           rawResponse: parsed.openaiFullResponse,
           parsedContent: parsed.openaiParsedContent,
+          systemPrompt: parsed.openaiSystemPrompt,
+          userMessage: parsed.openaiUserMessage,
           debug: parsed.openaiDebug,
         });
       }
@@ -162,32 +164,43 @@ export default function ResultPage() {
   const handleGenerateAnother = async () => {
     hapticMedium();
     
-    // Refresh credits from Supabase before checking
-    if (user?.id) {
-      const userCredits = await initializeUserCredits(user.id);
-      const refreshedCredits = userCredits.isUnlimited ? Infinity : userCredits.credits;
-      setCredits(refreshedCredits);
-      setIsUnlimited(userCredits.isUnlimited);
-      
-      // Check credits with refreshed values
-      const currentCredits = refreshedCredits === Infinity ? 999 : refreshedCredits;
-      
-      // If user has 0 credits (first-time user) or 5 or less credits, show upgrade
-      if (currentCredits === 0 || (currentCredits <= 5 && !userCredits.isUnlimited)) {
-        setShowUpgradeModal(true);
-        return;
+    try {
+      // Refresh credits from Supabase before checking
+      if (user?.id) {
+        const userCredits = await initializeUserCredits(user.id);
+        const refreshedCredits = userCredits.isUnlimited ? Infinity : userCredits.credits;
+        setCredits(refreshedCredits);
+        setIsUnlimited(userCredits.isUnlimited);
+        
+        // Check credits with refreshed values
+        const currentCredits = refreshedCredits === Infinity ? 999 : refreshedCredits;
+        
+        // If user has 0 credits (first-time user) or 5 or less credits, show upgrade
+        if (currentCredits === 0 || (currentCredits <= 5 && !userCredits.isUnlimited)) {
+          setShowUpgradeModal(true);
+          return;
+        }
+      } else {
+        // Not authenticated - check localStorage
+        const currentCredits = credits === Infinity ? 999 : credits;
+        if (currentCredits === 0 || (currentCredits <= 5 && !isUnlimited)) {
+          setShowUpgradeModal(true);
+          return;
+        }
       }
-    } else {
-      // Not authenticated - check localStorage
-      const currentCredits = credits === Infinity ? 999 : credits;
-      if (currentCredits === 0 || (currentCredits <= 5 && !isUnlimited)) {
-        setShowUpgradeModal(true);
-        return;
-      }
+      
+      // Clear session storage to start fresh
+      sessionStorage.removeItem("generationData");
+      
+      // User has enough credits, proceed to generate
+      console.log("Navigating to /generate");
+      router.push("/generate");
+    } catch (error) {
+      console.error("Error in handleGenerateAnother:", error);
+      // Still try to navigate even if credit check fails
+      sessionStorage.removeItem("generationData");
+      router.push("/generate");
     }
-    
-    // User has enough credits, proceed to generate
-    router.push("/generate");
   };
 
   const handleViewPortfolio = () => {
@@ -277,6 +290,26 @@ export default function ResultPage() {
                   </div>
                 )}
 
+                {/* System Prompt */}
+                {openAIResponseData.systemPrompt && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-mocha-dark mb-2">System Prompt Sent to OpenAI:</h4>
+                    <pre className="text-xs bg-stone-50 p-3 rounded overflow-auto max-h-60 whitespace-pre-wrap">
+                      {openAIResponseData.systemPrompt}
+                    </pre>
+                  </div>
+                )}
+
+                {/* User Message */}
+                {openAIResponseData.userMessage && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-mocha-dark mb-2">User Message Sent to OpenAI:</h4>
+                    <pre className="text-xs bg-stone-50 p-3 rounded overflow-auto max-h-60 whitespace-pre-wrap">
+                      {openAIResponseData.userMessage}
+                    </pre>
+                  </div>
+                )}
+
                 {/* Raw Response */}
                 {openAIResponseData.rawResponse && (
                   <div>
@@ -294,7 +327,10 @@ export default function ResultPage() {
         {/* Action Buttons */}
         <div className="mt-6 space-y-3">
           <button
-            onClick={handleGenerateAnother}
+            onClick={(e) => {
+              e.preventDefault();
+              handleGenerateAnother();
+            }}
             className="w-full py-3 border-2 border-champagne text-champagne-dark rounded-xl font-medium touch-target hover:bg-champagne/10 hover:border-champagne-dark transition-colors"
             style={{ color: '#B8941F', borderColor: '#D4AF37' }}
             type="button"

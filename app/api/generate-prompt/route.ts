@@ -481,6 +481,8 @@ Please create a highly detailed, specific prompt that incorporates all of these 
         timestamp: new Date().toISOString(),
         rawOpenAIResponse: rawOpenAIResponse, // Include full raw response for debugging
         parsedContent: content, // Include parsed content for debugging
+        systemPrompt: interpolatedSystemPrompt, // Include system prompt for debugging
+        userMessage: userMessage, // Include user message for debugging
       },
     };
     
