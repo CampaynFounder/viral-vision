@@ -18,6 +18,7 @@ import CreditCostDisplay from "@/components/ui/CreditCostDisplay";
 import StatusNotification, { StatusType } from "@/components/ui/StatusNotification";
 import { trackPromptGeneration } from "@/lib/utils/usage-tracker";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { initializeUserCredits } from "@/lib/utils/credits-manager";
 
 const statusMessages: Record<StatusType, string> = {
   thinking: "Thinking...",
@@ -59,19 +60,10 @@ export default function RefinePage() {
       facelessMode: parsed.facelessMode,
     });
 
-    // Load credits and generation count
-    const storedCredits = localStorage.getItem("credits");
-    const subscription = localStorage.getItem("subscription");
-    if (subscription === "active") {
-      setCredits(Infinity);
-      setIsUnlimited(true);
-    } else if (storedCredits) {
-      setCredits(parseInt(storedCredits, 10));
-      setIsUnlimited(false);
-    } else {
-      setCredits(50); // Default starting credits
-      setIsUnlimited(false);
-    }
+    // Load credits and generation count using credits manager
+    const userCredits = initializeUserCredits(user?.id || null);
+    setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
+    setIsUnlimited(userCredits.isUnlimited);
 
     const storedGenerations = localStorage.getItem("totalGenerations");
     if (storedGenerations) {

@@ -168,21 +168,20 @@ function CheckoutContent() {
     }
   };
 
-  const handleSuccessContinue = () => {
+  const handleSuccessContinue = async () => {
     // Grant credits and redirect (for authenticated users)
     if (selectedTier && user) {
-      // Store the user's tier (this determines if Upgrade button shows)
-      localStorage.setItem("userTier", selectedTier.id);
+      const { grantCredits } = require("@/lib/utils/credits-manager");
+      await grantCredits(
+        user.id,
+        selectedTier.credits === "unlimited" ? "unlimited" : (selectedTier.credits as number),
+        selectedTier.id,
+        selectedTier.type === "subscription" ? "subscription" : "purchase"
+      );
       
       if (selectedTier.type === "subscription") {
-        // CEO Access subscription
-        localStorage.setItem("subscription", "active");
-        localStorage.setItem("credits", "unlimited");
         router.push("/dashboard");
       } else {
-        // One-time purchases (Viral Starter or Empire Bundle)
-        const credits = selectedTier.credits as number;
-        localStorage.setItem("credits", credits.toString());
         router.push("/generate");
       }
     } else if (selectedTier && !user) {
@@ -340,14 +339,13 @@ function CheckoutContent() {
                       // Grant credits immediately (user is created, even if email not verified)
                       const pendingPayment = JSON.parse(sessionStorage.getItem("pendingPayment") || "{}");
                       if (pendingPayment.productId && selectedTier) {
-                        localStorage.setItem("userTier", selectedTier.id);
-                        if (selectedTier.type === "subscription") {
-                          localStorage.setItem("subscription", "active");
-                          localStorage.setItem("credits", "unlimited");
-                        } else {
-                          const credits = selectedTier.credits as number;
-                          localStorage.setItem("credits", credits.toString());
-                        }
+                        const { grantCredits } = require("@/lib/utils/credits-manager");
+                        await grantCredits(
+                          data.user.id,
+                          selectedTier.credits === "unlimited" ? "unlimited" : (selectedTier.credits as number),
+                          selectedTier.id,
+                          selectedTier.type === "subscription" ? "subscription" : "purchase"
+                        );
                         sessionStorage.removeItem("pendingPayment");
                       }
                       

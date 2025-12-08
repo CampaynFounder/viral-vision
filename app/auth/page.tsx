@@ -57,14 +57,13 @@ export default function AuthPage() {
               const tier = pricingTiers.find((t) => t.id === payment.productId);
               
               if (tier) {
-                localStorage.setItem("userTier", tier.id);
-                if (tier.type === "subscription") {
-                  localStorage.setItem("subscription", "active");
-                  localStorage.setItem("credits", "unlimited");
-                } else {
-                  const credits = tier.credits as number;
-                  localStorage.setItem("credits", credits.toString());
-                }
+                const { grantCredits } = require("@/lib/utils/credits-manager");
+                await grantCredits(
+                  data.user.id,
+                  tier.credits === "unlimited" ? "unlimited" : (tier.credits as number),
+                  tier.id,
+                  tier.type === "subscription" ? "subscription" : "purchase"
+                );
                 sessionStorage.removeItem("pendingPayment");
                 
                 // Redirect to generate page with credits
@@ -103,14 +102,13 @@ export default function AuthPage() {
               const tier = pricingTiers.find((t) => t.id === payment.productId);
               
               if (tier) {
-                localStorage.setItem("userTier", tier.id);
-                if (tier.type === "subscription") {
-                  localStorage.setItem("subscription", "active");
-                  localStorage.setItem("credits", "unlimited");
-                } else {
-                  const credits = tier.credits as number;
-                  localStorage.setItem("credits", credits.toString());
-                }
+                const { grantCredits } = require("@/lib/utils/credits-manager");
+                await grantCredits(
+                  data.user.id,
+                  tier.credits === "unlimited" ? "unlimited" : (tier.credits as number),
+                  tier.id,
+                  tier.type === "subscription" ? "subscription" : "purchase"
+                );
                 sessionStorage.removeItem("pendingPayment");
               }
             } catch (err) {

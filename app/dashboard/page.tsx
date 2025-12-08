@@ -9,6 +9,8 @@ import { motion } from "framer-motion";
 import { hapticMedium } from "@/lib/utils/haptics";
 import TextShuffler from "@/components/ui/TextShuffler";
 import { loadingTexts } from "@/lib/utils/text-shuffler";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { initializeUserCredits } from "@/lib/utils/credits-manager";
 
 // Mock trending aesthetics
 const trendingAesthetics = [
@@ -21,6 +23,7 @@ const trendingAesthetics = [
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [userInput, setUserInput] = useState("");
   const [facelessMode, setFacelessMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,15 +37,17 @@ export default function DashboardPage() {
     else if (hour < 17) setGreeting("Good Afternoon");
     else setGreeting("Good Evening");
 
-    // Check subscription status
-    const subscription = localStorage.getItem("subscription");
-    if (subscription === "active") {
+    // Verify subscription status using credits manager
+    const userCredits = initializeUserCredits(user?.id || null);
+    // Dashboard is only for CEO Access, so should be unlimited
+    // But verify it's actually active
+    if (userCredits.isUnlimited && userCredits.subscriptionStatus === "active") {
       setCredits(Infinity);
     } else {
-      const stored = localStorage.getItem("credits");
-      if (stored) setCredits(parseInt(stored, 10));
+      // User shouldn't be here if not subscribed, but handle gracefully
+      router.push("/generate");
     }
-  }, []);
+  }, [user, router]);
 
   const handleTrendClick = (trend: string) => {
     hapticMedium();

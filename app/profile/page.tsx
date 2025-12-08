@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { hapticMedium, hapticLight } from "@/lib/utils/haptics";
 import { supabase } from "@/lib/supabase/client";
 import { getUnlimitedUserStats } from "@/lib/utils/usage-tracker";
+import { initializeUserCredits } from "@/lib/utils/credits-manager";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -30,24 +31,20 @@ export default function ProfilePage() {
     // Load user data
     setEmail(user.email || "");
     
-    // Load credits and stats
-    const storedCredits = localStorage.getItem("credits");
-    const subscription = localStorage.getItem("subscription");
-    const storedGenerations = localStorage.getItem("totalGenerations");
+    // Load credits and stats using credits manager
+    const { initializeUserCredits } = require("@/lib/utils/credits-manager");
+    const userCredits = initializeUserCredits(user?.id || null);
+    setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
+    setSubscriptionStatus(userCredits.subscriptionStatus);
     
-    if (subscription === "active") {
-      setSubscriptionStatus("active");
-      setCredits(Infinity);
-    } else if (storedCredits) {
-      setCredits(parseInt(storedCredits, 10));
-    }
+    const storedGenerations = localStorage.getItem("totalGenerations");
     
     if (storedGenerations) {
       setTotalGenerations(parseInt(storedGenerations, 10));
     }
 
     // Load unlimited user stats if subscribed
-    if (subscription === "active" && user?.id) {
+    if (userCredits.subscriptionStatus === "active" && user?.id) {
       const stats = getUnlimitedUserStats(user.id);
       setUnlimitedStats(stats);
     }

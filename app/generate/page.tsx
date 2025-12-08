@@ -11,6 +11,7 @@ import { hapticMedium } from "@/lib/utils/haptics";
 import TextShuffler from "@/components/ui/TextShuffler";
 import { loadingTexts } from "@/lib/utils/text-shuffler";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { initializeUserCredits } from "@/lib/utils/credits-manager";
 
 export default function GeneratePage() {
   const router = useRouter();
@@ -44,17 +45,9 @@ export default function GeneratePage() {
 
   // Load credits and generation count from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem("credits");
-    const subscription = localStorage.getItem("subscription");
-    if (subscription === "active") {
-      setCredits(Infinity);
-    } else if (stored) {
-      setCredits(parseInt(stored, 10));
-    } else {
-      // New user - start with 50 free credits
-      setCredits(50);
-      localStorage.setItem("credits", "50");
-    }
+    // Use credits manager to properly initialize credits
+    const userCredits = initializeUserCredits(user?.id || null);
+    setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
 
     // Initialize generation count if not exists
     if (!localStorage.getItem("totalGenerations")) {

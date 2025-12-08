@@ -6,6 +6,7 @@ import { hapticLight } from "@/lib/utils/haptics";
 import CreditCounter from "@/components/ui/CreditCounter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import { initializeUserCredits } from "@/lib/utils/credits-manager";
 
 export default function Header() {
   const router = useRouter();
@@ -16,47 +17,19 @@ export default function Header() {
   const [userTier, setUserTier] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("credits");
-    const subscription = localStorage.getItem("subscription");
-    let tier = localStorage.getItem("userTier");
-    
-    // If subscription is active but no tier is set, assume CEO Access
-    if (subscription === "active" && !tier) {
-      tier = "ceo-access";
-      localStorage.setItem("userTier", "ceo-access");
-    }
-    
-    setUserTier(tier);
-    
-    if (subscription === "active") {
-      setCredits(999);
-      setIsUnlimited(true);
-    } else if (stored) {
-      setCredits(parseInt(stored, 10));
-    } else {
-      // New user - default to 50 credits
-      setCredits(50);
-    }
+    // Use credits manager to properly initialize credits
+    const userCredits = initializeUserCredits(user?.id || null);
+    setCredits(userCredits.isUnlimited ? 999 : userCredits.credits);
+    setIsUnlimited(userCredits.isUnlimited);
+    setUserTier(userCredits.userTier);
     
     // Listen for credit and tier updates (when user navigates between pages)
     const handleStorageChange = () => {
-      const updated = localStorage.getItem("credits");
-      const updatedTier = localStorage.getItem("userTier");
-      const updatedSubscription = localStorage.getItem("subscription");
-      
-      if (updated) {
-        setCredits(parseInt(updated, 10));
-      }
-      
-      // Update tier if changed
-      if (updatedTier) {
-        setUserTier(updatedTier);
-      }
-      
-      // If subscription is active, set tier to CEO Access
-      if (updatedSubscription === "active" && !updatedTier) {
-        setUserTier("ceo-access");
-      }
+      // Re-initialize credits to ensure accuracy
+      const userCredits = initializeUserCredits(user?.id || null);
+      setCredits(userCredits.isUnlimited ? 999 : userCredits.credits);
+      setIsUnlimited(userCredits.isUnlimited);
+      setUserTier(userCredits.userTier);
     };
     
     window.addEventListener("storage", handleStorageChange);
