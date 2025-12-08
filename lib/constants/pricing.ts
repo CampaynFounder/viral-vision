@@ -52,9 +52,9 @@ export const pricingTiers: PricingTier[] = [
     price: 97,
     priceDisplay: "$97",
     type: "one-time",
-    credits: 100,
+    credits: "unlimited",
     features: [
-      "100 credits",
+      "Unlimited generation",
       "Prompt Pack Reseller Kit (Canva templates)",
       "Commercial License",
       "Lifetime access to The Vault",

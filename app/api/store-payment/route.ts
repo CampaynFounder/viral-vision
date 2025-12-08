@@ -135,10 +135,11 @@ export async function POST(request: NextRequest) {
 
     // Grant credits based on product purchased
     // Map product IDs to credit amounts
+    // Note: amount in payments table is payment amount in cents, NOT credits
     const productCredits: Record<string, number | "unlimited"> = {
       "viral-starter": 50,
       "ceo-access": "unlimited",
-      "empire-bundle": 100,
+      "empire-bundle": "unlimited", // Empire Bundle grants unlimited credits
     };
 
     const creditsToGrant = productCredits[productId];
