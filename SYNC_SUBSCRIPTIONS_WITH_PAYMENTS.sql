@@ -103,7 +103,7 @@ BEGIN
         payment_record.created_at,
         NOW()
       )
-      ON CONFLICT (public.subscriptions.user_id) DO UPDATE
+      ON CONFLICT (user_id) DO UPDATE
       SET 
         status = 'active',
         plan_id = payment_record.product_id,
@@ -111,7 +111,7 @@ BEGIN
         updated_at = NOW();
       
       RETURN QUERY SELECT
-        payment_record.user_id,
+        payment_record.user_id as synced_user_id,
         'created'::TEXT,
         payment_record.product_id,
         'Subscription created from payment'::TEXT;
@@ -127,7 +127,7 @@ BEGIN
       
       IF FOUND THEN
         RETURN QUERY SELECT
-          payment_record.user_id,
+          payment_record.user_id as synced_user_id,
           'updated'::TEXT,
           payment_record.product_id,
           'Subscription updated to match payment'::TEXT;
