@@ -57,11 +57,18 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error("Stripe API error:", error);
+      const errorText = await response.text();
+      let errorMessage = "Failed to create payment intent";
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error?.message || errorData.message || errorMessage;
+        console.error("Stripe API error:", errorData);
+      } catch {
+        console.error("Stripe API error (raw):", errorText);
+      }
       return NextResponse.json(
-        { error: "Failed to create payment intent" },
-        { status: 500 }
+        { error: errorMessage },
+        { status: response.status }
       );
     }
 
@@ -71,10 +78,10 @@ export async function POST(request: NextRequest) {
       clientSecret: data.client_secret,
       paymentIntentId: data.id,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating payment intent:", error);
     return NextResponse.json(
-      { error: "Failed to create payment intent" },
+      { error: error?.message || "Failed to create payment intent" },
       { status: 500 }
     );
   }

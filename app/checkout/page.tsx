@@ -71,8 +71,14 @@ function CheckoutContent() {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to create payment intent");
+          let errorMessage = "Failed to create payment intent";
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch {
+            errorMessage = `Server error: ${response.status}`;
+          }
+          throw new Error(errorMessage);
         }
 
         const { clientSecret: secret } = await response.json();
