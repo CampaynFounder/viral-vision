@@ -10,7 +10,6 @@ import StripeProvider from "@/components/payment/StripeProvider";
 import StripeCardElement from "@/components/payment/StripeCardElement";
 import { useStripe, useElements } from "@stripe/react-stripe-js";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { supabase } from "@/lib/supabase/client";
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
@@ -27,11 +26,6 @@ function CheckoutContent() {
   const [error, setError] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
-  const [showSignUp, setShowSignUp] = useState(false);
-  const [signUpEmail, setSignUpEmail] = useState("");
-  const [signUpPassword, setSignUpPassword] = useState("");
-  const [signUpLoading, setSignUpLoading] = useState(false);
-  const [signUpError, setSignUpError] = useState<string | null>(null);
 
   useEffect(() => {
     const tier = pricingTiers.find((t) => t.id === productId);
