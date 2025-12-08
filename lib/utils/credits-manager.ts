@@ -55,18 +55,19 @@ export async function initializeUserCredits(userId: string | null): Promise<User
     return defaultCredits;
   }
 
-  // Authenticated user - fetch from Supabase first
+  // Authenticated user - ALWAYS fetch from Supabase (database is source of truth)
   try {
-    // Check for active subscription
-    const { data: subscription } = await supabase
+    // Check for active subscription (database source of truth)
+    const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
       .select('status, plan_id')
       .eq('user_id', userId)
       .eq('status', 'active')
       .single();
 
-    if (subscription) {
-      // User has unlimited subscription
+    if (subscription && !subError) {
+      // User has unlimited subscription - database is source of truth
+      // Cache in localStorage for offline/performance, but DB is authoritative
       localStorage.setItem("subscription", "active");
       localStorage.setItem("userTier", subscription.plan_id);
       localStorage.setItem("credits", "unlimited");
@@ -79,82 +80,56 @@ export async function initializeUserCredits(userId: string | null): Promise<User
       };
     }
 
-    // Get total credits from database
+    // Get total credits from database (SUM of all credit transactions)
+    // Database is source of truth - calculate from credits table
     const { data: creditRecords, error: creditError } = await supabase
       .from('credits')
       .select('amount')
       .eq('user_id', userId);
 
-    if (!creditError && creditRecords) {
-      const totalCredits = creditRecords.reduce((sum, record) => sum + record.amount, 0);
-      
-      // Sync to localStorage
-      localStorage.setItem("credits", totalCredits.toString());
-      
-      // Get user tier from most recent purchase
-      const { data: recentPayment } = await supabase
-        .from('payments')
-        .select('product_id')
-        .eq('user_id', userId)
-        .eq('status', 'succeeded')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (recentPayment) {
-        localStorage.setItem("userTier", recentPayment.product_id);
-      }
-
-      return {
-        credits: totalCredits,
-        isUnlimited: false,
-        userTier: recentPayment?.product_id || null,
-        subscriptionStatus: "none",
-      };
+    if (creditError) {
+      console.error("Error fetching credits from database:", creditError);
+      // If database query fails, throw error - don't fall back to localStorage
+      throw new Error(`Failed to fetch credits from database: ${creditError.message}`);
     }
+
+    // Calculate total from database transactions (source of truth)
+    const totalCredits = creditRecords?.reduce((sum, record) => sum + record.amount, 0) || 0;
+    
+    // Cache in localStorage for performance, but DB is authoritative
+    localStorage.setItem("credits", totalCredits.toString());
+    
+    // Get user tier from most recent purchase (database source of truth)
+    const { data: recentPayment } = await supabase
+      .from('payments')
+      .select('product_id')
+      .eq('user_id', userId)
+      .eq('status', 'succeeded')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (recentPayment) {
+      localStorage.setItem("userTier", recentPayment.product_id);
+    }
+
+    return {
+      credits: totalCredits,
+      isUnlimited: false,
+      userTier: recentPayment?.product_id || null,
+      subscriptionStatus: "none",
+    };
   } catch (error) {
     console.error("Error fetching credits from Supabase:", error);
-    // Fall through to localStorage fallback
-  }
-
-  // Fallback to localStorage if Supabase fails or no records found
-  const firstLoginKey = `firstLogin_${userId}`;
-  const hasLoggedInBefore = localStorage.getItem(firstLoginKey);
-
-  if (!hasLoggedInBefore) {
-    // First time login - clear any stale data and set defaults
-    localStorage.removeItem("subscription");
-    localStorage.removeItem("userTier");
-    localStorage.setItem("credits", "5");
-    localStorage.setItem(firstLoginKey, "true");
-    
-    return defaultCredits;
-  }
-
-  // Returning user - load from localStorage
-  const stored = localStorage.getItem("credits");
-  const subscription = localStorage.getItem("subscription");
-  const tier = localStorage.getItem("userTier");
-
-  if (subscription === "active" && tier) {
+    // For authenticated users, we MUST have database access
+    // If database is unavailable, return error state rather than stale localStorage
     return {
-      credits: 999, // Display value for unlimited
-      isUnlimited: true,
-      userTier: tier,
-      subscriptionStatus: "active",
-    };
-  }
-
-  if (stored && stored !== "unlimited" && !isNaN(parseInt(stored, 10))) {
-    return {
-      credits: parseInt(stored, 10),
+      credits: 0,
       isUnlimited: false,
-      userTier: tier,
+      userTier: null,
       subscriptionStatus: "none",
     };
   }
-
-  return defaultCredits;
 }
 
 /**
@@ -195,27 +170,15 @@ export async function verifySubscriptionStatus(userId: string): Promise<{
 }
 
 /**
- * Get total credits from Supabase
- * Sums all credit entries for a user
+ * Get total credits from Supabase (Database is source of truth)
+ * Sums all credit entries for a user from the credits table
+ * 
+ * @param userId - User ID to fetch credits for
+ * @returns Total credits (or 999 for unlimited, or 0 if error)
  */
 export async function getTotalCreditsFromDB(userId: string): Promise<number> {
   try {
-    // Query Supabase credits table
-    const { data, error } = await supabase
-      .from('credits')
-      .select('amount')
-      .eq('user_id', userId);
-    
-    if (error) {
-      console.error("Error fetching credits from Supabase:", error);
-      // Fallback to localStorage
-      const stored = localStorage.getItem("credits");
-      return stored && stored !== "unlimited" ? parseInt(stored, 10) : 5;
-    }
-    
-    const total = data?.reduce((sum, record) => sum + record.amount, 0) || 0;
-    
-    // Also check for active subscription
+    // First check for active subscription (unlimited access)
     const { data: subscription } = await supabase
       .from('subscriptions')
       .select('status, plan_id')
@@ -224,16 +187,32 @@ export async function getTotalCreditsFromDB(userId: string): Promise<number> {
       .single();
     
     if (subscription) {
-      // User has unlimited subscription
+      // User has unlimited subscription - database is source of truth
       return 999; // Display value for unlimited
     }
+    
+    // Query Supabase credits table - database is source of truth
+    // Calculate total by summing all credit transactions
+    const { data, error } = await supabase
+      .from('credits')
+      .select('amount')
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error("Error fetching credits from database:", error);
+      // Don't fall back to localStorage - database is source of truth
+      // Return 0 if database query fails
+      return 0;
+    }
+    
+    // Calculate total from database transactions (source of truth)
+    const total = data?.reduce((sum, record) => sum + record.amount, 0) || 0;
     
     return total;
   } catch (error) {
     console.error("Error getting credits from DB:", error);
-    // Fallback to localStorage
-    const stored = localStorage.getItem("credits");
-    return stored && stored !== "unlimited" ? parseInt(stored, 10) : 5;
+    // Database is source of truth - return 0 if we can't fetch
+    return 0;
   }
 }
 
