@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>First-Time Bonus Test Script</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #D4AF37;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #B8941F;
+    }
+    code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .info { background: #d1ecf1; color: #0c5460; }
+  </div>
+</head>
+<body>
+  <h1>🧪 First-Time Bonus Test Helper</h1>
+  
+  <div class="test-section">
+    <h2>Quick Reset & Test</h2>
+    <p>Click the button below to reset your state and prepare for testing:</p>
+    <button onclick="resetForTesting()">Reset for Testing</button>
+    <div id="resetStatus"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Check Current State</h2>
+    <button onclick="checkState()">Check State</button>
+    <div id="stateStatus"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Manual Setup</h2>
+    <p>Or manually run in console:</p>
+    <code>
+      localStorage.clear();<br>
+      sessionStorage.clear();<br>
+      localStorage.setItem("credits", "5");<br>
+      localStorage.setItem("totalGenerations", "0");
+    </code>
+  </div>
+
+  <div class="test-section">
+    <h2>Testing Steps</h2>
+    <ol>
+      <li>Click "Reset for Testing" above</li>
+      <li>Navigate to your app: <code>/generate</code></li>
+      <li>Enter some input text</li>
+      <li>Click "Manifest"</li>
+      <li>Select aesthetic, shot type, wardrobe</li>
+      <li>Click "Continue"</li>
+      <li><strong>Modal should appear with animations! 🎁</strong></li>
+    </ol>
+  </div>
+
+  <script>
+    function resetForTesting() {
+      try {
+        // Clear everything
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Set up first-time user state
+        localStorage.setItem("credits", "5");
+        localStorage.setItem("totalGenerations", "0");
+        
+        // Clear any bonus flags
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith("firstTimeBonusReceived_") || key.startsWith("firstLogin_")) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        document.getElementById("resetStatus").innerHTML = 
+          '<div class="status success">✅ Reset complete! State is ready for testing.<br>' +
+          'Credits: 5<br>Generations: 0<br>Bonus: Not received</div>';
+      } catch (error) {
+        document.getElementById("resetStatus").innerHTML = 
+          '<div class="status" style="background: #f8d7da; color: #721c24;">❌ Error: ' + error.message + '</div>';
+      }
+    }
+
+    function checkState() {
+      const credits = localStorage.getItem("credits") || "not set";
+      const generations = localStorage.getItem("totalGenerations") || "0";
+      const bonusKeys = Object.keys(localStorage).filter(k => k.startsWith("firstTimeBonusReceived_"));
+      const loginKeys = Object.keys(localStorage).filter(k => k.startsWith("firstLogin_"));
+      
+      let status = '<div class="status info">';
+      status += '<strong>Current State:</strong><br>';
+      status += `Credits: ${credits}<br>`;
+      status += `Total Generations: ${generations}<br>`;
+      status += `Bonus Received: ${bonusKeys.length > 0 ? 'Yes (' + bonusKeys.join(', ') + ')' : 'No'}<br>`;
+      status += `First Login: ${loginKeys.length > 0 ? 'Yes (' + loginKeys.join(', ') + ')' : 'No'}<br>`;
+      status += '<br><strong>Expected for Modal:</strong><br>';
+      status += `Credits < 10: ${parseInt(credits) < 10 ? '✅' : '❌'}<br>`;
+      status += `Generations === 0: ${generations === "0" ? '✅' : '❌'}<br>`;
+      status += `Bonus Not Received: ${bonusKeys.length === 0 ? '✅' : '❌'}<br>`;
+      status += '</div>';
+      
+      document.getElementById("stateStatus").innerHTML = status;
+    }
+
+    // Auto-check on load
+    window.onload = checkState;
+  </script>
+</body>
+</html>
+
