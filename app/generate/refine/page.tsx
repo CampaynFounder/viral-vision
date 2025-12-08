@@ -8,6 +8,8 @@ import { Aesthetic, ShotType, Wardrobe } from "@/lib/constants/aesthetics";
 import { motion, AnimatePresence } from "framer-motion";
 import { hapticMedium, hapticLight } from "@/lib/utils/haptics";
 import WizardField from "@/components/wizard/WizardField";
+import FirstTimeBonusModal from "@/components/ui/FirstTimeBonusModal";
+import { isEligibleForFirstTimeBonus, grantFirstTimeBonus, hasReceivedFirstTimeBonus } from "@/lib/utils/credits-manager";
 import ValidationPanel from "@/components/wizard/ValidationPanel";
 import { PromptWizardData, ModelType } from "@/lib/types/prompt-wizard";
 import { generateEnhancedPrompt } from "@/lib/utils/prompt-engine-v2";
@@ -17,7 +19,12 @@ import CreditCostDisplay from "@/components/ui/CreditCostDisplay";
 import StatusNotification, { StatusType } from "@/components/ui/StatusNotification";
 import { trackPromptGeneration } from "@/lib/utils/usage-tracker";
 import { useAuth } from "@/lib/contexts/AuthContext";
-import { initializeUserCredits } from "@/lib/utils/credits-manager";
+import {
+  initializeUserCredits,
+  hasReceivedFirstTimeBonus,
+  grantFirstTimeBonus,
+  isEligibleForFirstTimeBonus,
+} from "@/lib/utils/credits-manager";
 
 const statusMessages: Record<StatusType, string> = {
   thinking: "Thinking...",
@@ -42,6 +49,8 @@ export default function RefinePage() {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [recommendedNegativePrompts, setRecommendedNegativePrompts] = useState<string[]>([]);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showBonusModal, setShowBonusModal] = useState(false);
+  const [hasReceivedBonus, setHasReceivedBonus] = useState(false);
   
   // Enhanced wizard data
   const [wizardData, setWizardData] = useState<Partial<PromptWizardData>>({});
@@ -69,7 +78,12 @@ export default function RefinePage() {
     if (storedGenerations) {
       setTotalGenerations(parseInt(storedGenerations, 10));
     }
-  }, [router]);
+
+    // Check if user has received first-time bonus
+    const userId = user?.id || null;
+    const received = hasReceivedFirstTimeBonus(userId);
+    setHasReceivedBonus(received);
+  }, [router, user]);
 
   // Apply smart defaults when aesthetic changes
   useEffect(() => {
@@ -132,14 +146,8 @@ export default function RefinePage() {
     return getConversionMessage(credits, creditCost.totalCost, totalGenerations);
   }, [credits, creditCost.totalCost, totalGenerations]);
 
-  const handleContinue = async () => {
-    // Check if user has enough credits
-    if (credits !== Infinity && credits < creditCost.totalCost) {
-      // Show top-up modal or redirect to checkout
-      router.push("/checkout?product=viral-starter");
-      return;
-    }
-
+  // Shared generation logic
+  const executeGeneration = async (currentCredits: number) => {
     hapticMedium();
     
     // Track usage for profitability (even for unlimited users)
@@ -155,7 +163,7 @@ export default function RefinePage() {
     
     // Deduct calculated credits (only for non-unlimited users)
     if (!isUnlimited) {
-      const newCredits = credits - creditCost.totalCost;
+      const newCredits = currentCredits - creditCost.totalCost;
       setCredits(newCredits);
       localStorage.setItem("credits", newCredits.toString());
     }
@@ -241,6 +249,13 @@ export default function RefinePage() {
       );
       
       setStatus(null);
+      
+      // After first generation, ensure credits are at 0 (bonus was used)
+      if (totalGenerations === 0 && !isUnlimited) {
+        setCredits(0);
+        localStorage.setItem("credits", "0");
+      }
+      
       router.push("/generate/result");
     } catch (error) {
       console.error("Generation error:", error);
@@ -262,6 +277,39 @@ export default function RefinePage() {
       );
       router.push("/generate/result");
     }
+  };
+
+  const handleContinue = async () => {
+    // Check if user has enough credits
+    if (credits !== Infinity && credits < creditCost.totalCost) {
+      // Check if eligible for first-time bonus
+      const userId = user?.id || null;
+      const isFirstPrompt = totalGenerations === 0;
+      const eligibleForBonus = isEligibleForFirstTimeBonus(
+        userId,
+        credits,
+        creditCost.totalCost,
+        totalGenerations
+      );
+
+      if (eligibleForBonus && isFirstPrompt) {
+        // Show bonus modal
+        setShowBonusModal(true);
+        return;
+      }
+
+      // Not eligible, redirect to checkout
+      router.push("/checkout?product=viral-starter");
+      return;
+    }
+
+    await executeGeneration(credits);
+  };
+
+  const handleContinueAfterBonus = async () => {
+    // Get updated credits after bonus was granted
+    const updatedCredits = credits + 5;
+    await executeGeneration(updatedCredits);
   };
 
   const updateWizardData = (field: keyof PromptWizardData, value: any) => {
@@ -428,6 +476,28 @@ export default function RefinePage() {
               options={["Black", "Blonde", "Burgundy", "Neon", "Brown", "Red", "Other"]}
               value={wizardData.hairColor || ""}
               onChange={(value) => updateWizardData("hairColor", value)}
+              isOptional={true}
+            />
+
+            {/* Eyebrow Effect */}
+            <WizardField
+              label="Eyebrow Effect"
+              description="Optional - select an eyebrow enhancement effect"
+              type="select"
+              options={[
+                "Brauenlifting Effekt",
+                "Fox-Eye Effect",
+                "Doll-Eye Effect",
+                "Shadow Lift",
+                "Highlighting Brow Bone",
+                "Laminated Brow",
+                "Gradient Brow",
+                "Highlighted Inner",
+                "Upper Lash Lift",
+                "Snatched Contour"
+              ]}
+              value={wizardData.eyebrowEffect || ""}
+              onChange={(value) => updateWizardData("eyebrowEffect", value)}
               isOptional={true}
             />
           </div>
@@ -671,6 +741,8 @@ export default function RefinePage() {
             cost={creditCost}
             currentCredits={credits === Infinity ? 999 : credits}
             isUnlimited={credits === Infinity}
+            showBonusIndicator={!hasReceivedBonus && totalGenerations === 0}
+            isFirstPrompt={totalGenerations === 0}
           />
           {conversionMessage && (
             <motion.div
@@ -715,6 +787,30 @@ export default function RefinePage() {
           </span>
         </motion.button>
       </div>
+
+      {/* First-Time Bonus Modal */}
+      <FirstTimeBonusModal
+        show={showBonusModal}
+        currentCredits={credits}
+        requiredCredits={creditCost.totalCost}
+        onClaim={async () => {
+          const userId = user?.id || null;
+          await grantFirstTimeBonus(userId);
+          
+          // Update local state
+          const newCredits = credits + 5;
+          setCredits(newCredits);
+          setHasReceivedBonus(true);
+          setShowBonusModal(false);
+          
+          // Continue with generation using updated credits
+          await executeGeneration(newCredits);
+        }}
+        onDismiss={() => {
+          setShowBonusModal(false);
+          router.push("/checkout?product=viral-starter");
+        }}
+      />
     </div>
   );
 }

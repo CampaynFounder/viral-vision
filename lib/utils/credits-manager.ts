@@ -236,3 +236,78 @@ export async function deductCredits(
   return { success: true, remaining: newAmount };
 }
 
+/**
+ * Check if user has received first-time bonus
+ */
+export function hasReceivedFirstTimeBonus(userId: string | null): boolean {
+  if (!userId) {
+    return localStorage.getItem("firstTimeBonusReceived_anonymous") === "true";
+  }
+  return localStorage.getItem(`firstTimeBonusReceived_${userId}`) === "true";
+}
+
+/**
+ * Grant first-time bonus credits (5 credits)
+ * This is a one-time gift for new users to complete their first prompt
+ */
+export async function grantFirstTimeBonus(userId: string | null): Promise<void> {
+  const bonusKey = userId 
+    ? `firstTimeBonusReceived_${userId}` 
+    : "firstTimeBonusReceived_anonymous";
+  
+  // Mark as received
+  localStorage.setItem(bonusKey, "true");
+  
+  // Grant 5 credits
+  const current = localStorage.getItem("credits");
+  const currentAmount = current === "unlimited" ? 0 : parseInt(current || "0", 10);
+  const newAmount = currentAmount + 5;
+  localStorage.setItem("credits", newAmount.toString());
+  
+  // Phase 2: Record in Supabase
+  // if (userId) {
+  //   await supabase.from('credits').insert({
+  //     user_id: userId,
+  //     amount: 5,
+  //     source: 'first_time_bonus',
+  //   });
+  // }
+}
+
+/**
+ * Check if user is eligible for first-time bonus
+ * Requirements:
+ * - Has not received bonus before
+ * - Is on their first prompt (totalGenerations === 0)
+ * - Does not have enough credits for the current generation
+ */
+export function isEligibleForFirstTimeBonus(
+  userId: string | null,
+  currentCredits: number,
+  requiredCredits: number,
+  totalGenerations: number
+): boolean {
+  // Already received bonus
+  if (hasReceivedFirstTimeBonus(userId)) {
+    return false;
+  }
+  
+  // Not first prompt
+  if (totalGenerations > 0) {
+    return false;
+  }
+  
+  // Has enough credits already
+  if (currentCredits >= requiredCredits) {
+    return false;
+  }
+  
+  // Needs exactly 5 more credits (bonus amount)
+  const creditsNeeded = requiredCredits - currentCredits;
+  if (creditsNeeded > 5) {
+    return false; // Needs more than bonus can provide
+  }
+  
+  return true;
+}
+

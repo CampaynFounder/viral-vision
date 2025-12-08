@@ -8,6 +8,8 @@ interface CreditCostDisplayProps {
   currentCredits: number;
   isUnlimited?: boolean;
   className?: string;
+  showBonusIndicator?: boolean;
+  isFirstPrompt?: boolean;
 }
 
 export default function CreditCostDisplay({
@@ -15,6 +17,8 @@ export default function CreditCostDisplay({
   currentCredits,
   isUnlimited = false,
   className = "",
+  showBonusIndicator = false,
+  isFirstPrompt = false,
 }: CreditCostDisplayProps) {
   const canAfford = isUnlimited || currentCredits >= cost.totalCost;
   const remainingAfter = isUnlimited ? Infinity : currentCredits - cost.totalCost;
@@ -27,6 +31,20 @@ export default function CreditCostDisplay({
         canAfford ? "border-stone-200" : "border-red-300 bg-red-50"
       } ${className}`}
     >
+      {/* First-Time Bonus Indicator */}
+      {showBonusIndicator && isFirstPrompt && !canAfford && (
+        <div className="mb-4 p-3 bg-champagne/10 border-2 border-champagne/30 rounded-lg">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">🎁</span>
+            <span className="text-sm font-semibold text-champagne-dark" style={{ color: '#B8941F' }}>
+              First-Time Bonus Available
+            </span>
+          </div>
+          <p className="text-xs text-mocha-light" style={{ color: '#6B5A42' }}>
+            You'll receive {cost.totalCost - currentCredits} free credits when you're ready to generate
+          </p>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-3">
         <span className="body-luxury text-xs text-mocha-light">Generation Cost</span>
         <span

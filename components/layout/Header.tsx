@@ -4,7 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { hapticLight } from "@/lib/utils/haptics";
 import CreditCounter from "@/components/ui/CreditCounter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import { initializeUserCredits } from "@/lib/utils/credits-manager";
 
@@ -15,6 +15,8 @@ export default function Header() {
   const [credits, setCredits] = useState(50);
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [userTier, setUserTier] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [hasPlayed, setHasPlayed] = useState(false);
 
   useEffect(() => {
     // Use credits manager to properly initialize credits
@@ -42,6 +44,74 @@ export default function Header() {
     };
   }, [pathname]); // Re-check when route changes
 
+  // Handle video playback on first login
+  useEffect(() => {
+    if (!user || !videoRef.current) return;
+
+    // Check if video has been played this session
+    const sessionKey = `logoVideoPlayed_${user.id}`;
+    const hasPlayedThisSession = sessionStorage.getItem(sessionKey) === "true";
+
+    const video = videoRef.current;
+
+    if (!hasPlayedThisSession) {
+      // Play video on first login
+      const playVideo = () => {
+        video.play().catch((error) => {
+          console.error("Error playing logo video:", error);
+        });
+      };
+
+      // Wait for video to be ready
+      if (video.readyState >= 2) {
+        // Video is already loaded
+        playVideo();
+      } else {
+        // Wait for video to load
+        video.addEventListener("loadeddata", playVideo, { once: true });
+      }
+      
+      // Mark as played in sessionStorage
+      sessionStorage.setItem(sessionKey, "true");
+      setHasPlayed(true);
+    } else {
+      // Video already played, keep it paused at the end
+      const seekToEnd = () => {
+        if (video.duration) {
+          video.currentTime = video.duration;
+          video.pause();
+        }
+      };
+
+      if (video.readyState >= 2 && video.duration) {
+        // Video is already loaded
+        seekToEnd();
+      } else {
+        // Wait for video to load
+        video.addEventListener("loadedmetadata", seekToEnd, { once: true });
+      }
+      setHasPlayed(true);
+    }
+  }, [user]);
+
+  // Reset video state on logout
+  useEffect(() => {
+    if (!user && videoRef.current) {
+      // User logged out, clear all logo video session keys
+      // Clear all session keys that start with "logoVideoPlayed_"
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith("logoVideoPlayed_")) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      setHasPlayed(false);
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.pause();
+      }
+    }
+  }, [user]);
+
   const isHome = pathname === "/";
   const isCheckout = pathname === "/checkout";
   const isAuth = pathname === "/auth";
@@ -62,9 +132,29 @@ export default function Header() {
               hapticLight();
               router.push("/");
             }}
-            className="heading-luxury text-xl text-champagne touch-target"
+            className="touch-target relative"
+            style={{ height: '40px', width: 'auto', minWidth: '120px' }}
           >
-            Viral Vision
+            <video
+              ref={videoRef}
+              src="/vvs-logo.mp4"
+              className="h-full w-auto object-contain"
+              playsInline
+              muted
+              loop={false}
+              preload="auto"
+              style={{
+                maxHeight: '40px',
+                width: 'auto',
+                objectFit: 'contain',
+              }}
+              onEnded={() => {
+                // Keep video at the end frame (static)
+                if (videoRef.current) {
+                  videoRef.current.pause();
+                }
+              }}
+            />
           </motion.button>
 
           {/* Navigation */}

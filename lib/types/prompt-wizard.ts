@@ -39,6 +39,7 @@ export interface PromptWizardData {
   race?: string; // "African American", "Caucasian", "Asian", "Hispanic/Latino", "Mixed", "Other", "Prefer not to say"
   skinTone?: "Dark" | "Light" | "Brown" | "Bronze"; // Skin tone specification
   hairColor?: "Black" | "Blonde" | "Burgundy" | "Neon" | "Brown" | "Red" | "Other"; // Hair color
+  eyebrowEffect?: string; // Eyebrow enhancement effect
   
   // Step 2: Pose & Body Language
   pose?: string[]; // ["relaxed", "confident", "elegant", "dynamic"]

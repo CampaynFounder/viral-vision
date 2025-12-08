@@ -49,6 +49,8 @@ Skin Tone: \${wizardData?.skinTone || 'Not specified'}
 
 Hair Color: \${wizardData?.hairColor || 'Not specified'}
 
+Eyebrow Effect: \${wizardData?.eyebrowEffect || 'Not specified'}
+
 Target Model: \${model}
 
 Advanced Options: \${wizardData ? JSON.stringify(wizardData) : 'None'}

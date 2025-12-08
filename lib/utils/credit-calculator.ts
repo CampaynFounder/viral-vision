@@ -43,9 +43,14 @@ export function calculateCreditCost(
 ): CreditCostBreakdown {
   const breakdown: string[] = [];
   
-  // Base cost (always 1 credit minimum)
-  let baseCost = 1;
-  breakdown.push(`Base generation: ${baseCost} credit`);
+  // Base cost - First prompt costs 10 credits (to encourage bonus claim), subsequent prompts use normal pricing
+  const isFirstPrompt = (selections.totalGenerations || 0) === 0;
+  let baseCost = isFirstPrompt ? 10 : 1;
+  if (isFirstPrompt) {
+    breakdown.push(`First prompt: ${baseCost} credits (special pricing)`);
+  } else {
+    breakdown.push(`Base generation: ${baseCost} credit`);
+  }
   
   // Feature costs (additive)
   let featureCost = 0;

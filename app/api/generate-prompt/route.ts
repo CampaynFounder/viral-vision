@@ -158,6 +158,8 @@ Skin Tone: ${wizardData?.skinTone || 'Not specified'}
 
 Hair Color: ${wizardData?.hairColor || 'Not specified'}
 
+Eyebrow Effect: ${wizardData?.eyebrowEffect || 'Not specified'}
+
 Target Model: ${model}
 
 Advanced Options: ${wizardData ? JSON.stringify(wizardData) : 'None'}
@@ -265,6 +267,7 @@ Return valid JSON only. Do not include markdown code blocks (\`\`\`json).
       .replace(/\${wizardData\?\.race \|\| 'African American \(default\)'}/g, wizardData?.race || 'African American (default)')
       .replace(/\${wizardData\?\.skinTone \|\| 'Not specified'}/g, wizardData?.skinTone || 'Not specified')
       .replace(/\${wizardData\?\.hairColor \|\| 'Not specified'}/g, wizardData?.hairColor || 'Not specified')
+      .replace(/\${wizardData\?\.eyebrowEffect \|\| 'Not specified'}/g, wizardData?.eyebrowEffect || 'Not specified')
       .replace(/\${model}/g, model)
       .replace(/\${wizardData \? JSON\.stringify\(wizardData\) : 'None'}/g, wizardData ? JSON.stringify(wizardData) : 'None')
       .replace(/\${wizardData\?\.negativePrompts && Array\.isArray\(wizardData\.negativePrompts\) && wizardData\.negativePrompts\.length > 0 \? wizardData\.negativePrompts\.join\(", "\) : 'None - generate recommendations based on best practices'}/g, wizardData?.negativePrompts && Array.isArray(wizardData.negativePrompts) && wizardData.negativePrompts.length > 0 ? wizardData.negativePrompts.join(", ") : 'None - generate recommendations based on best practices');
