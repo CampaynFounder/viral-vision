@@ -9,17 +9,35 @@ import { Aesthetic, ShotType, Wardrobe } from "@/lib/constants/aesthetics";
 import { FormattedPrompt } from "@/lib/types/prompt-wizard";
 import { hapticMedium } from "@/lib/utils/haptics";
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { initializeUserCredits } from "@/lib/utils/credits-manager";
+import BottomSheet from "@/components/ui/BottomSheet";
 
 export default function ResultPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState<string>("");
   const [hooks, setHooks] = useState<string[]>([]);
   const [audio, setAudio] = useState<string>("");
   const [formattedPrompt, setFormattedPrompt] = useState<FormattedPrompt | null>(null);
   const [copied, setCopied] = useState(false);
+  const [credits, setCredits] = useState(5);
+  const [isUnlimited, setIsUnlimited] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [totalGenerations, setTotalGenerations] = useState(0);
 
   useEffect(() => {
+    // Load credits and generation count
+    const userCredits = initializeUserCredits(user?.id || null);
+    setCredits(userCredits.isUnlimited ? Infinity : userCredits.credits);
+    setIsUnlimited(userCredits.isUnlimited);
+    
+    const storedGenerations = localStorage.getItem("totalGenerations");
+    if (storedGenerations) {
+      setTotalGenerations(parseInt(storedGenerations, 10));
+    }
+
     // Get generation data
     const data = sessionStorage.getItem("generationData");
     if (!data) {
@@ -80,7 +98,7 @@ export default function ResultPage() {
       formattedPrompt: formattedPrompt || undefined,
     });
     localStorage.setItem("promptHistory", JSON.stringify(history.slice(0, 50))); // Keep last 50
-  }, [router, prompt, formattedPrompt, hooks, audio]);
+  }, [router, prompt, formattedPrompt, hooks, audio, user]);
 
   const handleCopyCompletePrompt = async () => {
     if (!prompt) return;
@@ -102,6 +120,28 @@ export default function ResultPage() {
     }
     
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleGenerateAnother = () => {
+    hapticMedium();
+    
+    // Check credits
+    const currentCredits = credits === Infinity ? 999 : credits;
+    const isFirstTimeUser = totalGenerations === 0;
+    
+    // If user has 0 credits (first-time user) or 5 or less credits, show upgrade
+    if (currentCredits === 0 || (currentCredits <= 5 && !isUnlimited)) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    
+    // User has enough credits, proceed to generate
+    router.push("/generate");
+  };
+
+  const handleViewPortfolio = () => {
+    hapticMedium();
+    router.push("/portfolio");
   };
 
   return (
@@ -152,12 +192,7 @@ export default function ResultPage() {
         {/* Action Buttons */}
         <div className="mt-6 space-y-3">
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              hapticMedium();
-              router.push("/generate");
-            }}
+            onClick={handleGenerateAnother}
             className="w-full py-3 border-2 border-champagne text-champagne-dark rounded-xl font-medium touch-target hover:bg-champagne/10 hover:border-champagne-dark transition-colors"
             style={{ color: '#B8941F', borderColor: '#D4AF37' }}
             type="button"
@@ -165,12 +200,7 @@ export default function ResultPage() {
             Generate Another
           </button>
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              hapticMedium();
-              router.push("/portfolio");
-            }}
+            onClick={handleViewPortfolio}
             className="w-full py-3 bg-stone-200 text-mocha-dark rounded-xl font-medium touch-target hover:bg-stone-300 transition-colors"
             style={{ backgroundColor: '#E7E5E4', color: '#1C1917' }}
             type="button"
@@ -179,6 +209,57 @@ export default function ResultPage() {
           </button>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      <BottomSheet
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        title="Upgrade to Continue"
+        titleStyle={{ color: '#1C1917', fontWeight: 'bold' }}
+      >
+        <div className="py-4">
+          <div className="text-center mb-6">
+            <p className="text-sm text-mocha-dark mb-4">
+              {credits === 0 
+                ? "You're out of credits! Upgrade to continue generating prompts."
+                : `You have ${credits} credit${credits === 1 ? '' : 's'} remaining. Upgrade now for unlimited access!`
+              }
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                hapticMedium();
+                router.push("/checkout?product=viral-starter");
+              }}
+              className="w-full py-3 bg-champagne text-white rounded-xl font-semibold touch-target hover:bg-champagne-dark transition-colors"
+              style={{ backgroundColor: '#D4AF37', color: '#FFFFFF' }}
+            >
+              Get Viral Starter ($27)
+            </button>
+            <button
+              onClick={() => {
+                hapticMedium();
+                router.push("/checkout?product=ceo-access");
+              }}
+              className="w-full py-3 bg-champagne-dark text-white rounded-xl font-semibold touch-target hover:bg-champagne transition-colors shadow-md"
+              style={{ backgroundColor: '#B8941F', color: '#FFFFFF' }}
+            >
+              Get CEO Access ($47/mo) - Unlimited
+            </button>
+            <button
+              onClick={() => {
+                hapticMedium();
+                setShowUpgradeModal(false);
+              }}
+              className="w-full py-2 text-mocha hover:text-mocha-dark text-sm touch-target transition-colors"
+            >
+              Maybe Later
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   );
 }
