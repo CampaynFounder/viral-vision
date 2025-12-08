@@ -60,7 +60,7 @@ WHERE p.status = 'succeeded'
 
 CREATE OR REPLACE FUNCTION sync_subscriptions_from_payments()
 RETURNS TABLE(
-  user_id UUID,
+  synced_user_id UUID,
   action TEXT,
   product_id TEXT,
   message TEXT
