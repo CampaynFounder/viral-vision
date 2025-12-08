@@ -428,7 +428,7 @@ Please create a highly detailed, specific prompt that incorporates all of these 
     console.log("📦 Full OpenAI API response structure:", JSON.stringify(data, null, 2).substring(0, 500));
     
     let content;
-    let rawOpenAIResponse: string;
+    let rawOpenAIResponse: string = "";
     try {
       rawOpenAIResponse = data.choices[0].message.content;
       console.log("📄 Raw OpenAI content length:", rawOpenAIResponse.length);
@@ -450,7 +450,7 @@ Please create a highly detailed, specific prompt that incorporates all of these 
       console.log("📋 Audio:", content.audio);
     } catch (parseError: any) {
       console.error("❌ Error parsing OpenAI response:", parseError);
-      console.error("Raw content:", rawOpenAIResponse);
+      console.error("Raw content:", rawOpenAIResponse || data.choices?.[0]?.message?.content || "Unable to retrieve");
       throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
     }
 
