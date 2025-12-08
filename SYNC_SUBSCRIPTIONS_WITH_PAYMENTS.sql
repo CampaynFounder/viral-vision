@@ -103,7 +103,7 @@ BEGIN
         payment_record.created_at,
         NOW()
       )
-      ON CONFLICT (user_id) DO UPDATE
+      ON CONFLICT (public.subscriptions.user_id) DO UPDATE
       SET 
         status = 'active',
         plan_id = payment_record.product_id,
@@ -214,7 +214,7 @@ WHERE p.user_id = 'user-uuid-here'
   AND p.product_id IN ('ceo-access', 'empire-bundle')
 GROUP BY p.user_id, p.product_id
 ORDER BY p.user_id, p.product_id, MAX(p.created_at) DESC
-ON CONFLICT (user_id) DO UPDATE
+ON CONFLICT (public.subscriptions.user_id) DO UPDATE
 SET 
   status = 'active',
   plan_id = EXCLUDED.plan_id,
@@ -252,8 +252,8 @@ BEGIN
     SET 
       status = 'canceled',
       updated_at = NOW()
-    WHERE subscriptions.user_id = sub_record.user_id
-      AND subscriptions.status = 'active';
+    WHERE public.subscriptions.user_id = sub_record.user_id
+      AND public.subscriptions.status = 'active';
     
     RETURN QUERY SELECT
       sub_record.user_id,
