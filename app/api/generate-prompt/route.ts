@@ -302,41 +302,92 @@ Return valid JSON only. Do not include markdown code blocks (\`\`\`json).
     }
 
     // Interpolate user data into system prompt template
+    // Replace template variables with actual values
+    const aestheticValue = aesthetic?.name || aesthetic?.id || 'Not specified';
+    const shotTypeValue = shotType?.name || shotType?.id || 'Not specified';
+    const wardrobeValue = wardrobe?.name || wardrobe?.id || 'Not specified';
+    const formatValue = wizardData?.format || 'image';
+    const raceValue = wizardData?.race || 'African American (default)';
+    const skinToneValue = wizardData?.skinTone || 'Not specified';
+    const hairColorValue = wizardData?.hairColor || 'Not specified';
+    const eyebrowEffectValue = wizardData?.eyebrowEffect || 'Not specified';
+    const actionValue = wizardData?.action || 'Not specified';
+    const cameraMovementValue = wizardData?.cameraMovement || 'Not specified';
+    const videoNegativePromptsValue = wizardData?.videoNegativePrompts && Array.isArray(wizardData.videoNegativePrompts) && wizardData.videoNegativePrompts.length > 0 
+      ? wizardData.videoNegativePrompts.join(", ") 
+      : 'None';
+    const negativePromptsValue = wizardData?.negativePrompts && Array.isArray(wizardData.negativePrompts) && wizardData.negativePrompts.length > 0 
+      ? wizardData.negativePrompts.join(", ") 
+      : 'None - generate recommendations based on best practices';
+    const wizardDataJson = wizardData ? JSON.stringify(wizardData, null, 2) : 'None';
+
+    // Replace all template variables (handle both escaped and unescaped versions)
     const interpolatedSystemPrompt = systemPrompt
-      .replace(/\${aesthetic\?\.name \|\| aesthetic\?\.id \|\| 'Not specified'}/g, aesthetic?.name || aesthetic?.id || 'Not specified')
-      .replace(/\${shotType\?\.name \|\| shotType\?\.id \|\| 'Not specified'}/g, shotType?.name || shotType?.id || 'Not specified')
-      .replace(/\${wardrobe\?\.name \|\| wardrobe\?\.id \|\| 'Not specified'}/g, wardrobe?.name || wardrobe?.id || 'Not specified')
-      .replace(/\${wizardData\?\.format \|\| 'image'}/g, wizardData?.format || 'image')
-      .replace(/\${wizardData\?\.race \|\| 'African American \(default\)'}/g, wizardData?.race || 'African American (default)')
-      .replace(/\${wizardData\?\.skinTone \|\| 'Not specified'}/g, wizardData?.skinTone || 'Not specified')
-      .replace(/\${wizardData\?\.hairColor \|\| 'Not specified'}/g, wizardData?.hairColor || 'Not specified')
-      .replace(/\${wizardData\?\.eyebrowEffect \|\| 'Not specified'}/g, wizardData?.eyebrowEffect || 'Not specified')
-      .replace(/\${wizardData\?\.action \|\| 'Not specified'}/g, wizardData?.action || 'Not specified')
-      .replace(/\${wizardData\?\.cameraMovement \|\| 'Not specified'}/g, wizardData?.cameraMovement || 'Not specified')
-      .replace(/\${wizardData\?\.videoNegativePrompts && Array\.isArray\(wizardData\.videoNegativePrompts\) && wizardData\.videoNegativePrompts\.length > 0 \? wizardData\.videoNegativePrompts\.join\(", "\) : 'None'}/g, wizardData?.videoNegativePrompts && Array.isArray(wizardData.videoNegativePrompts) && wizardData.videoNegativePrompts.length > 0 ? wizardData.videoNegativePrompts.join(", ") : 'None')
-      .replace(/\${model}/g, model)
-      .replace(/\${wizardData \? JSON\.stringify\(wizardData\) : 'None'}/g, wizardData ? JSON.stringify(wizardData) : 'None')
-      .replace(/\${wizardData\?\.negativePrompts && Array\.isArray\(wizardData\.negativePrompts\) && wizardData\.negativePrompts\.length > 0 \? wizardData\.negativePrompts\.join\(", "\) : 'None - generate recommendations based on best practices'}/g, wizardData?.negativePrompts && Array.isArray(wizardData.negativePrompts) && wizardData.negativePrompts.length > 0 ? wizardData.negativePrompts.join(", ") : 'None - generate recommendations based on best practices');
+      .replace(/\$\{aesthetic\?\.name \|\| aesthetic\?\.id \|\| 'Not specified'\}/g, aestheticValue)
+      .replace(/\$\{shotType\?\.name \|\| shotType\?\.id \|\| 'Not specified'\}/g, shotTypeValue)
+      .replace(/\$\{wardrobe\?\.name \|\| wardrobe\?\.id \|\| 'Not specified'\}/g, wardrobeValue)
+      .replace(/\$\{wizardData\?\.format \|\| 'image'\}/g, formatValue)
+      .replace(/\$\{wizardData\?\.race \|\| 'African American \(default\)'\}/g, raceValue)
+      .replace(/\$\{wizardData\?\.skinTone \|\| 'Not specified'\}/g, skinToneValue)
+      .replace(/\$\{wizardData\?\.hairColor \|\| 'Not specified'\}/g, hairColorValue)
+      .replace(/\$\{wizardData\?\.eyebrowEffect \|\| 'Not specified'\}/g, eyebrowEffectValue)
+      .replace(/\$\{wizardData\?\.action \|\| 'Not specified'\}/g, actionValue)
+      .replace(/\$\{wizardData\?\.cameraMovement \|\| 'Not specified'\}/g, cameraMovementValue)
+      .replace(/\$\{wizardData\?\.videoNegativePrompts && Array\.isArray\(wizardData\.videoNegativePrompts\) && wizardData\.videoNegativePrompts\.length > 0 \? wizardData\.videoNegativePrompts\.join\(", "\) : 'None'\}/g, videoNegativePromptsValue)
+      .replace(/\$\{model\}/g, model)
+      .replace(/\$\{wizardData \? JSON\.stringify\(wizardData\) : 'None'\}/g, wizardDataJson)
+      .replace(/\$\{wizardData\?\.negativePrompts && Array\.isArray\(wizardData\.negativePrompts\) && wizardData\.negativePrompts\.length > 0 \? wizardData\.negativePrompts\.join\(", "\) : 'None - generate recommendations based on best practices'\}/g, negativePromptsValue)
+      // Also handle escaped versions from template strings
+      .replace(/\\\$\{aesthetic\?\.name \|\| aesthetic\?\.id \|\| 'Not specified'\}/g, aestheticValue)
+      .replace(/\\\$\{shotType\?\.name \|\| shotType\?\.id \|\| 'Not specified'\}/g, shotTypeValue)
+      .replace(/\\\$\{wardrobe\?\.name \|\| wardrobe\?\.id \|\| 'Not specified'\}/g, wardrobeValue)
+      .replace(/\\\$\{wizardData\?\.format \|\| 'image'\}/g, formatValue)
+      .replace(/\\\$\{model\}/g, model);
+
+    // Build comprehensive user message with all context
+    const userMessage = `Generate an optimized prompt for ${model} based on the following user input and selections:
+
+**User Input:** "${userInput}"
+
+**Aesthetic:** ${aestheticValue}
+**Shot Type:** ${shotTypeValue}
+**Wardrobe:** ${wardrobeValue}
+**Format:** ${formatValue}
+**Race:** ${raceValue}
+**Skin Tone:** ${skinToneValue}
+**Hair Color:** ${hairColorValue}
+**Eyebrow Effect:** ${eyebrowEffectValue}
+${formatValue === 'video' ? `**Action:** ${actionValue}\n**Camera Movement:** ${cameraMovementValue}\n**Video Negative Prompts:** ${videoNegativePromptsValue}` : ''}
+**User-Specified Negative Prompts:** ${negativePromptsValue}
+**Additional Wizard Data:** ${wizardDataJson}
+
+**Target Model:** ${model}
+
+Please create a highly detailed, specific prompt that incorporates all of these elements. The prompt should be optimized for ${model} and follow the instructions in the system prompt. Ensure the output is tailored to Black Luxury aesthetics unless otherwise specified.`;
 
     // Call OpenAI API
     console.log("📞 Calling OpenAI API...");
+    console.log("📝 System prompt length:", interpolatedSystemPrompt.length);
+    console.log("📝 User message length:", userMessage.length);
+    console.log("📝 Model:", model);
+    
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: interpolatedSystemPrompt },
-            { role: "user", content: `Create an optimized, sanitized prompt from this input: "${promptText}"\n\nInclude all the user selections and ensure it's ready for ${model} image generation.` },
-          ],
-          temperature: 0.7,
-          max_tokens: 1500,
-          response_format: { type: "json_object" },
-        }),
-      });
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: interpolatedSystemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        temperature: 0.7,
+        max_tokens: 2000, // Increased for more detailed responses
+        response_format: { type: "json_object" },
+      }),
+    });
 
       // Store the generated prompt with system_prompt_id for tracking
       // TODO: Phase 2 - Save to Supabase prompts table with system_prompt_id
