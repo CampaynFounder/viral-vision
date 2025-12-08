@@ -59,8 +59,14 @@ export async function POST(request: NextRequest) {
     let systemPromptId: string | null = null;
     
     try {
+      // Use absolute URL for server-side fetch
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+        (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
       const systemPromptResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/system-prompt`
+        `${baseUrl}/api/system-prompt`,
+        {
+          cache: 'no-store', // Always fetch fresh from DB
+        }
       );
       if (systemPromptResponse.ok) {
         const systemPromptData = await systemPromptResponse.json();
