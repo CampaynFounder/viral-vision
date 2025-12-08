@@ -7,6 +7,7 @@ import { generatePrompt, generateViralHooks, generateAudioSuggestion } from "@/l
 import { PromptGenerationInput } from "@/lib/utils/prompt-engine";
 import { Aesthetic, ShotType, Wardrobe } from "@/lib/constants/aesthetics";
 import { FormattedPrompt } from "@/lib/types/prompt-wizard";
+import { hapticMedium } from "@/lib/utils/haptics";
 
 export default function ResultPage() {
   const router = useRouter();
@@ -98,14 +99,22 @@ export default function ResultPage() {
         {/* Action Buttons */}
         <div className="mt-6 space-y-3">
           <button
-            onClick={() => router.push("/generate")}
+            onClick={() => {
+              hapticMedium();
+              router.push("/generate");
+            }}
             className="w-full py-3 border-2 border-champagne text-champagne-dark rounded-xl font-medium touch-target hover:bg-champagne/10 hover:border-champagne-dark transition-colors"
+            style={{ color: '#B8941F', borderColor: '#D4AF37' }}
           >
             Generate Another
           </button>
           <button
-            onClick={() => router.push("/portfolio")}
+            onClick={() => {
+              hapticMedium();
+              router.push("/portfolio");
+            }}
             className="w-full py-3 bg-stone-200 text-mocha-dark rounded-xl font-medium touch-target hover:bg-stone-300 transition-colors"
+            style={{ backgroundColor: '#E7E5E4', color: '#1C1917' }}
           >
             View Portfolio
           </button>

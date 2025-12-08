@@ -69,7 +69,7 @@ export default function ReceiptCard({
 
       {/* Prompt */}
       <motion.div variants={itemVariants} className="mb-6">
-        <p className="text-mocha text-sm leading-relaxed whitespace-pre-wrap">
+        <p className="text-mocha-dark text-sm leading-relaxed whitespace-pre-wrap font-medium" style={{ color: '#1C1917' }}>
           {prompt}
         </p>
         <button
@@ -91,7 +91,7 @@ export default function ReceiptCard({
               key={index}
               className="bg-stone-100 p-3 rounded-lg flex items-center justify-between"
             >
-              <p className="text-mocha text-sm flex-1">{hook}</p>
+              <p className="text-mocha-dark text-sm flex-1 font-medium" style={{ color: '#1C1917' }}>{hook}</p>
               <button
                 onClick={() => handleCopyHook(hook, index)}
                 className="ml-3 px-4 py-2 border border-champagne text-champagne-dark rounded-lg text-xs font-medium touch-target hover:bg-champagne/10 hover:border-champagne-dark transition-colors"
@@ -109,7 +109,7 @@ export default function ReceiptCard({
           <h4 className="body-luxury text-xs text-mocha-light mb-2">
             Audio Suggestion
           </h4>
-          <p className="text-mocha text-sm italic">"{audio}"</p>
+          <p className="text-mocha-dark text-sm italic font-medium" style={{ color: '#1C1917' }}>"{audio}"</p>
         </motion.div>
       )}
     </motion.div>

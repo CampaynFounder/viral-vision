@@ -8,7 +8,6 @@ import { Aesthetic, ShotType, Wardrobe } from "@/lib/constants/aesthetics";
 import { motion, AnimatePresence } from "framer-motion";
 import { hapticMedium, hapticLight } from "@/lib/utils/haptics";
 import WizardField from "@/components/wizard/WizardField";
-import PromptPreview from "@/components/wizard/PromptPreview";
 import ValidationPanel from "@/components/wizard/ValidationPanel";
 import { PromptWizardData, ModelType } from "@/lib/types/prompt-wizard";
 import { generateEnhancedPrompt } from "@/lib/utils/prompt-engine-v2";
@@ -512,10 +511,6 @@ export default function RefinePage() {
           </motion.div>
         )}
 
-        {/* Prompt Preview */}
-        <div className="mb-6 sm:mb-8">
-          <PromptPreview prompt={prompt} />
-        </div>
 
         {/* Credit Cost Display */}
         <div className="mb-6">
