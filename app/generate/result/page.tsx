@@ -81,8 +81,8 @@ export default function ResultPage() {
         setOpenAIResponseData({
           rawResponse: parsed.openaiFullResponse,
           parsedContent: parsed.openaiParsedContent,
-          systemPrompt: parsed.openaiSystemPrompt,
-          userMessage: parsed.openaiUserMessage,
+          systemPrompt: parsed.openaiSystemPrompt || parsed.openaiDebug?.systemPrompt,
+          userMessage: parsed.openaiUserMessage || parsed.openaiDebug?.userMessage,
           debug: parsed.openaiDebug,
         });
       }
@@ -165,6 +165,11 @@ export default function ResultPage() {
     hapticMedium();
     
     try {
+      // Clear session storage first to start fresh
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem("generationData");
+      }
+      
       // Refresh credits from Supabase before checking
       if (user?.id) {
         const userCredits = await initializeUserCredits(user.id);
@@ -189,17 +194,29 @@ export default function ResultPage() {
         }
       }
       
-      // Clear session storage to start fresh
-      sessionStorage.removeItem("generationData");
-      
       // User has enough credits, proceed to generate
       console.log("Navigating to /generate");
-      router.push("/generate");
+      // Use window.location as fallback if router.push doesn't work
+      try {
+        router.push("/generate");
+        // Force navigation after a short delay if router doesn't work
+        setTimeout(() => {
+          if (window.location.pathname !== "/generate") {
+            console.log("Router.push failed, using window.location");
+            window.location.href = "/generate";
+          }
+        }, 100);
+      } catch (navError) {
+        console.error("Navigation error:", navError);
+        window.location.href = "/generate";
+      }
     } catch (error) {
       console.error("Error in handleGenerateAnother:", error);
       // Still try to navigate even if credit check fails
-      sessionStorage.removeItem("generationData");
-      router.push("/generate");
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem("generationData");
+        window.location.href = "/generate";
+      }
     }
   };
 
