@@ -3,6 +3,7 @@ import "./globals.css";
 import LayoutClient from "./layout-client";
 import Header from "@/components/layout/Header";
 import { AuthProvider } from "@/lib/contexts/AuthContext";
+import SessionTimeoutProvider from "@/components/providers/SessionTimeoutProvider";
 
 export const metadata: Metadata = {
   title: "Viral Vision - Generate Viral Luxury Content Prompts",
@@ -32,10 +33,12 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className="h-full antialiased">
         <AuthProvider>
-          <LayoutClient>
-            <Header />
-            {children}
-          </LayoutClient>
+          <SessionTimeoutProvider>
+            <LayoutClient>
+              <Header />
+              {children}
+            </LayoutClient>
+          </SessionTimeoutProvider>
         </AuthProvider>
       </body>
     </html>

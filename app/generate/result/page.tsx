@@ -152,22 +152,28 @@ export default function ResultPage() {
         {/* Action Buttons */}
         <div className="mt-6 space-y-3">
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               hapticMedium();
               router.push("/generate");
             }}
             className="w-full py-3 border-2 border-champagne text-champagne-dark rounded-xl font-medium touch-target hover:bg-champagne/10 hover:border-champagne-dark transition-colors"
             style={{ color: '#B8941F', borderColor: '#D4AF37' }}
+            type="button"
           >
             Generate Another
           </button>
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               hapticMedium();
               router.push("/portfolio");
             }}
             className="w-full py-3 bg-stone-200 text-mocha-dark rounded-xl font-medium touch-target hover:bg-stone-300 transition-colors"
             style={{ backgroundColor: '#E7E5E4', color: '#1C1917' }}
+            type="button"
           >
             View Portfolio
           </button>
