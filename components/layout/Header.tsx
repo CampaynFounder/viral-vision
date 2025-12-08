@@ -13,10 +13,21 @@ export default function Header() {
   const { user, signOut } = useAuth();
   const [credits, setCredits] = useState(50);
   const [isUnlimited, setIsUnlimited] = useState(false);
+  const [userTier, setUserTier] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("credits");
     const subscription = localStorage.getItem("subscription");
+    let tier = localStorage.getItem("userTier");
+    
+    // If subscription is active but no tier is set, assume CEO Access
+    if (subscription === "active" && !tier) {
+      tier = "ceo-access";
+      localStorage.setItem("userTier", "ceo-access");
+    }
+    
+    setUserTier(tier);
+    
     if (subscription === "active") {
       setCredits(999);
       setIsUnlimited(true);
@@ -27,11 +38,24 @@ export default function Header() {
       setCredits(50);
     }
     
-    // Listen for credit updates (when user navigates between pages)
+    // Listen for credit and tier updates (when user navigates between pages)
     const handleStorageChange = () => {
       const updated = localStorage.getItem("credits");
+      const updatedTier = localStorage.getItem("userTier");
+      const updatedSubscription = localStorage.getItem("subscription");
+      
       if (updated) {
         setCredits(parseInt(updated, 10));
+      }
+      
+      // Update tier if changed
+      if (updatedTier) {
+        setUserTier(updatedTier);
+      }
+      
+      // If subscription is active, set tier to CEO Access
+      if (updatedSubscription === "active" && !updatedTier) {
+        setUserTier("ceo-access");
       }
     };
     
@@ -129,16 +153,19 @@ export default function Header() {
             >
               Profile
             </button>
-            <button
-              onClick={() => {
-                hapticLight();
-                router.push("/checkout");
-              }}
-              className="body-luxury text-sm px-4 py-2 bg-champagne text-white rounded-full touch-target hover:bg-champagne-dark transition-colors overflow-hidden"
-              style={{ backgroundColor: '#D4AF37', color: '#FFFFFF', maxWidth: '100%' }}
-            >
-              <span className="truncate block">Upgrade</span>
-            </button>
+            {/* Show Upgrade button only for non-subscribers and viral-starter users */}
+            {userTier !== "ceo-access" && userTier !== "empire-bundle" && (
+              <button
+                onClick={() => {
+                  hapticLight();
+                  router.push("/checkout");
+                }}
+                className="body-luxury text-sm px-4 py-2 bg-champagne text-white rounded-full touch-target hover:bg-champagne-dark transition-colors overflow-hidden"
+                style={{ backgroundColor: '#D4AF37', color: '#FFFFFF', maxWidth: '100%' }}
+              >
+                <span className="truncate block">Upgrade</span>
+              </button>
+            )}
           </nav>
 
           {/* User Info & Credits */}
@@ -208,16 +235,19 @@ export default function Header() {
           >
             Profile
           </button>
-          <button
-            onClick={() => {
-              hapticLight();
-              router.push("/checkout");
-            }}
-            className="body-luxury text-xs px-3 py-1.5 bg-champagne text-white rounded-full touch-target"
-            style={{ backgroundColor: '#D4AF37', color: '#FFFFFF' }}
-          >
-            Upgrade
-          </button>
+          {/* Show Upgrade button only for non-subscribers and viral-starter users */}
+          {userTier !== "ceo-access" && userTier !== "empire-bundle" && (
+            <button
+              onClick={() => {
+                hapticLight();
+                router.push("/checkout");
+              }}
+              className="body-luxury text-xs px-3 py-1.5 bg-champagne text-white rounded-full touch-target"
+              style={{ backgroundColor: '#D4AF37', color: '#FFFFFF' }}
+            >
+              Upgrade
+            </button>
+          )}
         </nav>
       </div>
     </header>

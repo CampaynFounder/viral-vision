@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.OPENAI_API_KEY;
     
     if (!apiKey) {
+      console.error("⚠️ OPENAI_API_KEY not configured - using fallback mock response");
       // Fallback to mock if API key not set
       return NextResponse.json({
         prompt: `${userInput}${facelessMode ? ", woman seen from behind" : ""}`,
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest) {
         },
       });
     }
+
+    console.log("✅ OpenAI API key found, making API call...");
 
     // Build comprehensive prompt with all user selections
     let promptText = userInput;
@@ -141,6 +144,7 @@ The refined prompt should:
 Focus on luxury, aspirational content that converts.`;
 
     // Call OpenAI API
+    console.log("📞 Calling OpenAI API...");
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -159,11 +163,15 @@ Focus on luxury, aspirational content that converts.`;
       }),
     });
 
+    console.log(`📊 OpenAI API response status: ${response.status}`);
+
     if (!response.ok) {
       const error = await response.text();
-      console.error("OpenAI API error:", error);
-      throw new Error("Failed to generate prompt");
+      console.error("❌ OpenAI API error:", error);
+      throw new Error(`OpenAI API error: ${error}`);
     }
+
+    console.log("✅ OpenAI API call successful");
 
     const data = await response.json();
     const content = JSON.parse(data.choices[0].message.content);

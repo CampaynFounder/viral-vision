@@ -8,15 +8,23 @@ import { motion } from "framer-motion";
 import { hapticMedium } from "@/lib/utils/haptics";
 import StripeProvider from "@/components/payment/StripeProvider";
 import StripeCardElement from "@/components/payment/StripeCardElement";
+import { useStripe, useElements } from "@stripe/react-stripe-js";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const stripe = useStripe();
+  const elements = useElements();
+  const { user } = useAuth();
   const productId = searchParams.get("product") || "viral-starter";
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   useEffect(() => {
     const tier = pricingTiers.find((t) => t.id === productId);
@@ -28,22 +36,101 @@ function CheckoutContent() {
     setShowCheckout(true);
   };
 
-  const handlePaymentSubmit = () => {
-    // Mock payment processing
-    setTimeout(() => {
-      setCheckoutSuccess(true);
-      // In Phase 2, this will integrate with Stripe
-    }, 2000);
+  const handlePaymentSubmit = async () => {
+    if (!stripe || !elements || !selectedTier) {
+      setError("Stripe not loaded. Please refresh the page.");
+      return;
+    }
+
+    setProcessing(true);
+    setError(null);
+    hapticMedium();
+
+    try {
+      // Step 1: Create Payment Intent
+      if (!clientSecret) {
+        const response = await fetch("/api/create-payment-intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: selectedTier.id,
+            userId: user?.id || "anonymous",
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to create payment intent");
+        }
+
+        const { clientSecret: secret } = await response.json();
+        setClientSecret(secret);
+        
+        // Step 2: Confirm Payment
+        const cardElement = elements.getElement("card");
+        if (!cardElement) {
+          throw new Error("Card element not found");
+        }
+
+        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(secret, {
+          payment_method: {
+            card: cardElement,
+          },
+        });
+
+        if (confirmError) {
+          throw new Error(confirmError.message || "Payment failed");
+        }
+
+        if (paymentIntent?.status === "succeeded") {
+          setCheckoutSuccess(true);
+        } else {
+          throw new Error("Payment not completed");
+        }
+      } else {
+        // Payment intent already created, just confirm
+        const cardElement = elements.getElement("card");
+        if (!cardElement) {
+          throw new Error("Card element not found");
+        }
+
+        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: cardElement,
+          },
+        });
+
+        if (confirmError) {
+          throw new Error(confirmError.message || "Payment failed");
+        }
+
+        if (paymentIntent?.status === "succeeded") {
+          setCheckoutSuccess(true);
+        } else {
+          throw new Error("Payment not completed");
+        }
+      }
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      setError(err.message || "Payment failed. Please try again.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleSuccessContinue = () => {
     // Set mock credits in localStorage
     if (selectedTier) {
+      // Store the user's tier (this determines if Upgrade button shows)
+      localStorage.setItem("userTier", selectedTier.id);
+      
       if (selectedTier.type === "subscription") {
+        // CEO Access subscription
         localStorage.setItem("subscription", "active");
         localStorage.setItem("credits", "unlimited");
         router.push("/dashboard");
       } else {
+        // One-time purchases (Viral Starter or Empire Bundle)
         const credits = selectedTier.credits as number;
         localStorage.setItem("credits", credits.toString());
         router.push("/generate");
@@ -143,6 +230,7 @@ function CheckoutContent() {
           if (!checkoutSuccess) setShowCheckout(false);
         }}
         title="Complete Your Purchase"
+        titleStyle={{ color: '#1C1917', fontWeight: 'bold' }}
       >
         {checkoutSuccess ? (
           <motion.div
@@ -166,10 +254,10 @@ function CheckoutContent() {
                 d="M5 13l4 4L19 7"
               />
             </motion.svg>
-            <h3 className="heading-luxury text-2xl text-mocha mb-2">
+            <h3 className="heading-luxury text-2xl text-white mb-2 font-bold" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0,0,0,0.5), 0 0 2px rgba(0,0,0,0.3)' }}>
               Payment Successful!
             </h3>
-            <p className="text-mocha-light mb-6">
+            <p className="text-white mb-6 font-medium" style={{ color: '#FFFFFF', textShadow: '0 1px 4px rgba(0,0,0,0.5), 0 0 1px rgba(0,0,0,0.3)' }}>
               Your access has been activated. Start generating now.
             </p>
             <button
@@ -184,7 +272,7 @@ function CheckoutContent() {
           <div className="py-4">
             {/* Instructions Text */}
             <div className="mb-6 pb-4 border-b border-stone-200">
-              <p className="text-sm font-medium leading-relaxed" style={{ color: '#E8DCC6' }}>
+              <p className="text-sm font-medium leading-relaxed" style={{ color: '#1C1917' }}>
                 Enter your payment details below to complete your purchase. Your payment is secure and encrypted.
               </p>
             </div>
@@ -192,7 +280,7 @@ function CheckoutContent() {
             {/* Stripe Elements */}
             <div className="space-y-4 mb-6">
               <div>
-                <label className="body-luxury text-xs text-mocha-dark font-semibold mb-2 block">
+                <label className="body-luxury text-xs font-semibold mb-2 block" style={{ color: '#1C1917', fontWeight: '600' }}>
                   Card Details
                 </label>
                 <StripeCardElement onCardChange={setCardComplete} />
@@ -201,36 +289,43 @@ function CheckoutContent() {
 
             <div className="p-4 bg-stone-100 rounded-xl mb-6">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-mocha">Total</span>
-                <span className="heading-luxury text-xl text-champagne">
+                <span className="font-semibold" style={{ color: '#1C1917' }}>Total</span>
+                <span className="heading-luxury text-xl font-bold" style={{ color: '#D4AF37' }}>
                   {selectedTier.priceDisplay}
                 </span>
               </div>
-              <p className="text-xs text-mocha-light">
+              <p className="text-xs font-medium" style={{ color: '#1C1917' }}>
                 {selectedTier.type === "subscription"
                   ? "Recurring monthly"
                   : "One-time payment"}
               </p>
             </div>
 
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 text-sm">
+                {error}
+              </div>
+            )}
             <button
               onClick={handlePaymentSubmit}
-              disabled={!cardComplete}
+              disabled={!cardComplete || processing}
               className={`w-full py-4 rounded-xl font-semibold touch-target transition-colors overflow-hidden ${
-                !cardComplete
-                  ? "bg-stone-300 text-stone-900 cursor-not-allowed"
+                !cardComplete || processing
+                  ? "bg-stone-200 cursor-not-allowed"
                   : "bg-champagne text-white hover:bg-champagne-dark"
               }`}
               style={
-                !cardComplete
-                  ? { backgroundColor: "#D1D5DB", color: "#1C1917", maxWidth: '100%', fontWeight: '600' }
-                  : { backgroundColor: "#D4AF37", color: "#FFFFFF", maxWidth: '100%', fontWeight: '600' }
+                !cardComplete || processing
+                  ? { backgroundColor: "#E7E5E4", color: "#1C1917", maxWidth: '100%', fontWeight: '700' }
+                  : { backgroundColor: "#D4AF37", color: "#FFFFFF", maxWidth: '100%', fontWeight: '700' }
               }
             >
-              <span className="truncate block font-bold">Complete Purchase</span>
+              <span className="truncate block font-bold" style={{ color: !cardComplete || processing ? '#1C1917' : '#FFFFFF' }}>
+                {processing ? "Processing..." : "Complete Purchase"}
+              </span>
             </button>
-            <p className="text-xs text-mocha-light text-center mt-4">
-              Secure payment powered by Stripe (Phase 2)
+            <p className="text-xs text-center mt-4 font-medium" style={{ color: '#1C1917' }}>
+              Secure payment powered by Stripe
             </p>
           </div>
         )}

@@ -4,13 +4,19 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import { ReactNode } from "react";
 
-// For Phase 1, Stripe Elements will work in test mode even without a key
-// In Phase 2, this will come from environment variables
-// Note: Stripe Elements requires a valid publishable key to function properly
-// For now, we'll use a placeholder that allows the UI to render
+// SECURITY: Only use publishable key (pk_*) on client-side
+// NEVER use secret key (sk_*) in client-side code
 const getStripeKey = () => {
   if (typeof window === "undefined") return null;
-  return process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || null;
+  const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || null;
+  
+  // Security check: Ensure we're not accidentally using a secret key
+  if (key && key.startsWith('sk_')) {
+    console.error('SECURITY ERROR: Secret key detected in publishable key! Use pk_* key instead.');
+    return null; // Don't use secret key on client
+  }
+  
+  return key;
 };
 
 const stripePromise = getStripeKey() ? loadStripe(getStripeKey()!) : null;

@@ -8,6 +8,7 @@ interface BottomSheetProps {
   onClose: () => void;
   children: ReactNode;
   title?: string;
+  titleStyle?: React.CSSProperties;
 }
 
 export default function BottomSheet({
@@ -15,6 +16,7 @@ export default function BottomSheet({
   onClose,
   children,
   title,
+  titleStyle,
 }: BottomSheetProps) {
   return (
     <AnimatePresence>
@@ -36,6 +38,7 @@ export default function BottomSheet({
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="fixed bottom-0 left-0 right-0 bg-alabaster rounded-t-3xl shadow-2xl z-50 max-h-[90vh] overflow-hidden flex flex-col"
+            style={{ backgroundColor: '#FAF9F6' }}
           >
             {/* Handle bar */}
             <div className="flex justify-center pt-3 pb-2">
@@ -45,7 +48,7 @@ export default function BottomSheet({
             {/* Title */}
             {title && (
               <div className="px-6 pb-4">
-                <h2 className="heading-luxury text-2xl text-mocha">{title}</h2>
+                <h2 className="heading-luxury text-2xl" style={titleStyle || { color: '#1C1917', fontWeight: 'bold' }}>{title}</h2>
               </div>
             )}
 
