@@ -39,12 +39,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Payment Intent via Stripe API
-    // Stripe metadata must be flat key-value pairs, not JSON string
-    // automatic_payment_methods should be JSON string
+    // Stripe form-encoded format: use form fields for nested objects
     const formData = new URLSearchParams();
     formData.append("amount", amount.toString());
     formData.append("currency", "usd");
-    formData.append("automatic_payment_methods", JSON.stringify({ enabled: true }));
+    formData.append("automatic_payment_methods[enabled]", "true");
     
     // Add metadata as individual key-value pairs (Stripe format: metadata[key])
     formData.append("metadata[productId]", productId);
