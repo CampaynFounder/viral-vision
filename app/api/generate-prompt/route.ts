@@ -407,7 +407,28 @@ Please create a highly detailed, specific prompt that incorporates all of these 
     console.log("✅ OpenAI API call successful");
 
     const data = await response.json();
-    const content = JSON.parse(data.choices[0].message.content);
+    console.log("📦 OpenAI response received, parsing content...");
+    
+    let content;
+    try {
+      const rawContent = data.choices[0].message.content;
+      console.log("📄 Raw content length:", rawContent.length);
+      console.log("📄 Raw content preview:", rawContent.substring(0, 200));
+      
+      // Try to parse JSON (handle markdown code blocks if present)
+      const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) || rawContent.match(/(\{[\s\S]*\})/);
+      if (jsonMatch) {
+        content = JSON.parse(jsonMatch[1]);
+      } else {
+        content = JSON.parse(rawContent);
+      }
+      console.log("✅ Successfully parsed OpenAI response");
+      console.log("📋 Generated prompt preview:", content.refinedPrompt?.substring(0, 100));
+    } catch (parseError: any) {
+      console.error("❌ Error parsing OpenAI response:", parseError);
+      console.error("Raw content:", data.choices[0].message.content);
+      throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
+    }
 
     // Run sanity check on the generated prompt
     const sanityCheck = await runSanityCheck(content.refinedPrompt, {
