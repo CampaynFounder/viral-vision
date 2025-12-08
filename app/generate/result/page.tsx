@@ -8,6 +8,7 @@ import { PromptGenerationInput } from "@/lib/utils/prompt-engine";
 import { Aesthetic, ShotType, Wardrobe } from "@/lib/constants/aesthetics";
 import { FormattedPrompt } from "@/lib/types/prompt-wizard";
 import { hapticMedium } from "@/lib/utils/haptics";
+import { motion } from "framer-motion";
 
 export default function ResultPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function ResultPage() {
   const [hooks, setHooks] = useState<string[]>([]);
   const [audio, setAudio] = useState<string>("");
   const [formattedPrompt, setFormattedPrompt] = useState<FormattedPrompt | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     // Get generation data
@@ -79,9 +81,53 @@ export default function ResultPage() {
     localStorage.setItem("promptHistory", JSON.stringify(history.slice(0, 50))); // Keep last 50
   }, [router, prompt, formattedPrompt, hooks, audio]);
 
+  const handleCopyCompletePrompt = async () => {
+    if (!prompt) return;
+    
+    await navigator.clipboard.writeText(prompt);
+    setCopied(true);
+    hapticMedium();
+    
+    // Analytics placeholder
+    if (typeof window !== "undefined" && (window as any).gtag) {
+      (window as any).gtag("event", "copy_prompt", {
+        event_category: "engagement",
+      });
+    }
+    
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="min-h-screen bg-alabaster p-6 pb-24">
       <div className="max-w-2xl mx-auto">
+        {/* Prominent 1-Click Copy Button */}
+        <motion.button
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={handleCopyCompletePrompt}
+          className="w-full mb-6 py-4 bg-champagne text-white rounded-xl font-bold text-lg touch-target hover:bg-champagne-dark transition-all shadow-lg hover:shadow-xl"
+          style={{ backgroundColor: '#D4AF37', color: '#FFFFFF' }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {copied ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Copied to Clipboard!
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Copy Complete Prompt
+            </span>
+          )}
+        </motion.button>
+
         <ReceiptCard
           prompt={prompt}
           hooks={hooks}
