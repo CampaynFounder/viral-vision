@@ -40,6 +40,8 @@ export default function RefinePage() {
   const [status, setStatus] = useState<StatusType | null>(null);
   const [sanityCheckResult, setSanityCheckResult] = useState<any>(null);
   const [isUnlimited, setIsUnlimited] = useState(false);
+  const [recommendedNegativePrompts, setRecommendedNegativePrompts] = useState<string[]>([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   
   // Enhanced wizard data
   const [wizardData, setWizardData] = useState<Partial<PromptWizardData>>({});
@@ -200,6 +202,16 @@ export default function RefinePage() {
       const result = await response.json();
       setSanityCheckResult(result.sanityCheck);
       
+      // Store recommended negative prompts and auto-accept them
+      if (result.recommendedNegativePrompts && Array.isArray(result.recommendedNegativePrompts) && result.recommendedNegativePrompts.length > 0) {
+        setRecommendedNegativePrompts(result.recommendedNegativePrompts);
+        // Auto-accept: merge with existing negative prompts, avoiding duplicates
+        const existing = wizardData.negativePrompts || [];
+        const merged = [...new Set([...result.recommendedNegativePrompts, ...existing])];
+        updateWizardData("negativePrompts", merged);
+        setShowRecommendations(true);
+      }
+      
       // Step 5: Finalizing
       setStatus("finalizing");
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -212,14 +224,19 @@ export default function RefinePage() {
           aesthetic: selectedAesthetic,
           shotType: selectedShotType,
           wardrobe: selectedWardrobe,
-          wizardData,
+          wizardData: {
+            ...wizardData,
+            negativePrompts: wizardData.negativePrompts || result.recommendedNegativePrompts || [],
+          },
           model: selectedModel,
           formattedPrompt: prompt,
           creditCost: creditCost.totalCost,
           openaiPrompt: result.prompt,
+          openaiNegativePrompt: result.negativePrompt,
           openaiHooks: result.hooks,
           openaiAudio: result.audio,
           sanityCheck: result.sanityCheck,
+          recommendedNegativePrompts: result.recommendedNegativePrompts || [],
         })
       );
       
@@ -508,10 +525,68 @@ export default function RefinePage() {
                 onChange={(value) => updateWizardData("cameraAngle", value)}
               />
 
+              {/* Recommended Negative Prompts */}
+              {showRecommendations && recommendedNegativePrompts.length > 0 && (
+                <div className="mb-6 p-4 bg-champagne/10 border-2 border-champagne/30 rounded-xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="body-luxury text-xs text-mocha-dark font-semibold mb-1">
+                        Recommended Negative Prompts
+                      </h4>
+                      <p className="text-xs text-mocha-light">
+                        Based on your selections and best practices
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowRecommendations(false)}
+                      className="text-mocha-light hover:text-mocha text-sm"
+                    >
+                      Hide
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {recommendedNegativePrompts.map((term, idx) => {
+                      const isSelected = wizardData.negativePrompts?.includes(term);
+                      return (
+                        <motion.button
+                          key={idx}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            hapticLight();
+                            const current = wizardData.negativePrompts || [];
+                            if (isSelected) {
+                              updateWizardData("negativePrompts", current.filter(t => t !== term));
+                            } else {
+                              updateWizardData("negativePrompts", [...current, term]);
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium touch-target transition-all ${
+                            isSelected
+                              ? "bg-champagne text-white"
+                              : "bg-white text-mocha-dark border border-stone-200"
+                          }`}
+                          style={
+                            isSelected
+                              ? { backgroundColor: "#D4AF37", color: "#FFFFFF" }
+                              : { backgroundColor: "#FFFFFF", color: "#6B5A42" }
+                          }
+                        >
+                          {term}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-mocha-light italic">
+                    ✓ All recommendations have been auto-accepted. Click to remove any you don't want.
+                  </p>
+                </div>
+              )}
+
               {/* Negative Prompts */}
               <WizardField
-                label="Negative Prompts"
-                description="What to exclude from the image"
+                label="Additional Negative Prompts"
+                description="Add custom exclusions (optional)"
                 type="multi-select"
                 options={[
                   "blurry",
@@ -537,7 +612,6 @@ export default function RefinePage() {
                   "too many fingers",
                   "cropped",
                   "worst quality",
-                  "low quality",
                   "jpeg artifacts",
                   "signature",
                   "username",

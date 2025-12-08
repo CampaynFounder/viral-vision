@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 export default function ResultPage() {
   const router = useRouter();
   const [prompt, setPrompt] = useState("");
+  const [negativePrompt, setNegativePrompt] = useState<string>("");
   const [hooks, setHooks] = useState<string[]>([]);
   const [audio, setAudio] = useState<string>("");
   const [formattedPrompt, setFormattedPrompt] = useState<FormattedPrompt | null>(null);
@@ -31,6 +32,7 @@ export default function ResultPage() {
     // Check if we have OpenAI-generated prompt
     if (parsed.openaiPrompt) {
       setPrompt(parsed.openaiPrompt);
+      setNegativePrompt(parsed.openaiNegativePrompt || "");
       setHooks(parsed.openaiHooks || []);
       setAudio(parsed.openaiAudio || "");
     } else if (parsed.formattedPrompt) {
@@ -83,7 +85,12 @@ export default function ResultPage() {
   const handleCopyCompletePrompt = async () => {
     if (!prompt) return;
     
-    await navigator.clipboard.writeText(prompt);
+    // Copy both positive and negative prompt if available
+    const fullPrompt = negativePrompt 
+      ? `${prompt}\n\nNegative: ${negativePrompt}`
+      : prompt;
+    
+    await navigator.clipboard.writeText(fullPrompt);
     setCopied(true);
     hapticMedium();
     
@@ -129,6 +136,7 @@ export default function ResultPage() {
 
         <ReceiptCard
           prompt={prompt}
+          negativePrompt={negativePrompt}
           hooks={hooks}
           audio={audio}
           onCopyPrompt={() => {

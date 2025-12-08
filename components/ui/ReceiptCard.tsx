@@ -6,6 +6,7 @@ import { hapticLight } from "@/lib/utils/haptics";
 
 interface ReceiptCardProps {
   prompt: string;
+  negativePrompt?: string;
   hooks: string[];
   audio?: string;
   onCopyPrompt?: () => void;
@@ -28,6 +29,7 @@ const itemVariants = {
 
 export default function ReceiptCard({
   prompt,
+  negativePrompt,
   hooks,
   audio,
   onCopyPrompt,
@@ -79,6 +81,20 @@ export default function ReceiptCard({
           {copiedPrompt ? "✓ Copied!" : "Copy Prompt"}
         </button>
       </motion.div>
+
+      {/* Negative Prompt */}
+      {negativePrompt && (
+        <motion.div variants={itemVariants} className="mb-6">
+          <h4 className="body-luxury text-xs text-mocha-light mb-2">
+            Negative Prompt
+          </h4>
+          <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
+            <p className="text-mocha-dark text-sm leading-relaxed font-medium" style={{ color: '#1C1917' }}>
+              {negativePrompt}
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* Viral Hooks */}
       <motion.div variants={itemVariants} className="mb-6">

@@ -98,9 +98,8 @@ export async function POST(request: NextRequest) {
       if (wizardData.timeOfDay) {
         promptText += `, ${wizardData.timeOfDay}`;
       }
-      if (wizardData.negativePrompts && Array.isArray(wizardData.negativePrompts) && wizardData.negativePrompts.length > 0) {
-        promptText += `, negative prompts: ${wizardData.negativePrompts.join(", ")}`;
-      }
+      // Note: Negative prompts are handled separately in the system prompt
+      // They will be incorporated into the negativePrompt field in the response
     }
 
     // New system prompt for "Black Luxury" and "High-End Lifestyle" niches
@@ -156,6 +155,21 @@ Construct a prompt optimized specifically for **${model}**.
 
 - **Technical (Photography):** Define lighting that complements darker skin tones (e.g., "warm golden hour rim light," "rembrandt lighting," "softbox fill"). Specify camera gear (e.g., "Shot on Sony A7R IV, 85mm G Master lens, f/1.8").
 
+- **Negative Prompt Recommendations:** Based on the user's selections, generate a comprehensive list of recommended negative prompt terms that:
+  1. Include standard quality exclusions (blurry, low quality, distorted, ugly, bad anatomy, extra limbs, deformed, bad proportions, bad hands, mutation, duplicate, worst quality, jpeg artifacts, signature, watermark, text, username, artist name)
+  2. Exclude elements that contradict the "Luxury" aesthetic (cheap fabrics, messy backgrounds, unprofessional settings, cluttered scenes, amateur photography)
+  3. Add model-specific exclusions based on ${model} best practices
+  4. Consider the aesthetic style (e.g., Old Money should exclude synthetic materials and streetwear elements; Y2K should exclude vintage/classic elements)
+  5. Consider the shot type (e.g., close-ups should exclude full-body artifacts; wide shots should exclude close-up distortions)
+  6. Consider the wardrobe selection (e.g., formal wear should exclude casual elements; athleisure should exclude formal elements)
+  7. Return as an array of individual negative prompt terms (not a comma-separated string)
+
+- **Negative Prompt:** Generate a comprehensive negative prompt string that:
+  1. Incorporates all recommended negative prompt terms
+  2. Incorporates any user-specified negative prompts from the input (if provided)
+  3. Formats as a comma-separated list optimized for ${model}
+  4. Ensures no elements that would detract from the aspirational Black Luxury vibe
+
 - **Syntax Strategy:**
 
     - IF ${model} is "Midjourney": Use comma-separated phrases, weights (::), and parameters (--v 6.0, --style raw, --stylize).
@@ -184,6 +198,13 @@ Return valid JSON only. Do not include markdown code blocks (\`\`\`json).
 
 {
   "refinedPrompt": "String: The fully optimized image generation prompt.",
+  "negativePrompt": "String: The comprehensive negative prompt with user-specified exclusions and standard quality exclusions, formatted as comma-separated list.",
+  "recommendedNegativePrompts": [
+    "String: Individual negative prompt term 1",
+    "String: Individual negative prompt term 2",
+    "String: Individual negative prompt term 3",
+    "..."
+  ],
   "hooks": [
     "String: Hook 1",
     "String: Hook 2",
@@ -247,6 +268,8 @@ Return valid JSON only. Do not include markdown code blocks (\`\`\`json).
 
     return NextResponse.json({
       prompt: content.refinedPrompt || promptText,
+      negativePrompt: content.negativePrompt || "",
+      recommendedNegativePrompts: content.recommendedNegativePrompts || [],
       hooks: content.hooks || [
         "POV: You finally stopped trading time for money...",
         "When you realize 9-5 wasn't the vibe...",
