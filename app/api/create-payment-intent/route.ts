@@ -39,21 +39,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Payment Intent via Stripe API
+    // Stripe metadata must be flat key-value pairs, not JSON string
+    const formData = new URLSearchParams({
+      amount: amount.toString(),
+      currency: "usd",
+      automatic_payment_methods: JSON.stringify({ enabled: true }),
+    });
+    
+    // Add metadata as individual key-value pairs
+    formData.append("metadata[productId]", productId);
+    formData.append("metadata[userId]", userId || "anonymous");
+
     const response = await fetch("https://api.stripe.com/v1/payment_intents", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${secretKey}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        amount: amount.toString(),
-        currency: "usd",
-        automatic_payment_methods: JSON.stringify({ enabled: true }),
-        metadata: JSON.stringify({
-          productId,
-          userId: userId || "anonymous",
-        }),
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
