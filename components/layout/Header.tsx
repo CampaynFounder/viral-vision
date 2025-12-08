@@ -181,11 +181,16 @@ export default function Header() {
                 hapticLight();
                 router.push("/generate");
               }}
-              className={`body-luxury text-sm touch-target transition-colors ${
+              className={`body-luxury text-sm touch-target transition-colors font-semibold ${
                 pathname.startsWith("/generate")
                   ? "text-champagne"
-                  : "text-mocha hover:text-champagne"
+                  : "text-mocha-dark hover:text-champagne"
               }`}
+              style={
+                pathname.startsWith("/generate")
+                  ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
+                  : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
+              }
             >
               Generator
             </button>
@@ -194,11 +199,16 @@ export default function Header() {
                 hapticLight();
                 router.push("/dashboard");
               }}
-              className={`body-luxury text-sm touch-target transition-colors ${
+              className={`body-luxury text-sm touch-target transition-colors font-semibold ${
                 pathname === "/dashboard"
                   ? "text-champagne"
-                  : "text-mocha hover:text-champagne"
+                  : "text-mocha-dark hover:text-champagne"
               }`}
+              style={
+                pathname === "/dashboard"
+                  ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
+                  : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
+              }
             >
               Dashboard
             </button>
@@ -207,11 +217,16 @@ export default function Header() {
                 hapticLight();
                 router.push("/portfolio");
               }}
-              className={`body-luxury text-sm touch-target transition-colors ${
+              className={`body-luxury text-sm touch-target transition-colors font-semibold ${
                 pathname === "/portfolio"
                   ? "text-champagne"
-                  : "text-mocha hover:text-champagne"
+                  : "text-mocha-dark hover:text-champagne"
               }`}
+              style={
+                pathname === "/portfolio"
+                  ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
+                  : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
+              }
             >
               Portfolio
             </button>
@@ -220,15 +235,15 @@ export default function Header() {
                 hapticLight();
                 router.push("/profile");
               }}
-              className={`body-luxury text-sm touch-target transition-colors font-medium ${
+              className={`body-luxury text-sm touch-target transition-colors font-semibold ${
                 pathname === "/profile"
-                  ? "text-champagne font-semibold"
-                  : "text-mocha hover:text-champagne"
+                  ? "text-champagne"
+                  : "text-mocha-dark hover:text-champagne"
               }`}
               style={
                 pathname === "/profile"
-                  ? { color: '#D4AF37' }
-                  : { color: '#6B5A42' }
+                  ? { color: '#D4AF37', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }
+                  : { color: '#1C1917', textShadow: '0 1px 2px rgba(255,255,255,0.5)' }
               }
             >
               Profile
