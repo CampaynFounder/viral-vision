@@ -54,6 +54,28 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ OpenAI API key found, making API call...");
 
+    // Fetch system prompt from database (with fallback to hardcoded)
+    let systemPrompt: string;
+    let systemPromptId: string | null = null;
+    
+    try {
+      const systemPromptResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/system-prompt`
+      );
+      if (systemPromptResponse.ok) {
+        const systemPromptData = await systemPromptResponse.json();
+        systemPrompt = systemPromptData.prompt;
+        systemPromptId = systemPromptData.id;
+        console.log(`📝 Using system prompt version: ${systemPromptData.version} (${systemPromptData.source})`);
+      } else {
+        throw new Error("Failed to fetch system prompt");
+      }
+    } catch (error) {
+      console.warn("⚠️ Could not fetch system prompt from DB, using fallback");
+      // Fallback to hardcoded prompt
+      systemPrompt = getDefaultSystemPrompt();
+    }
+
     // Build comprehensive prompt with all user selections
     let promptText = userInput;
     
@@ -102,8 +124,9 @@ export async function POST(request: NextRequest) {
       // They will be incorporated into the negativePrompt field in the response
     }
 
-    // New system prompt for "Black Luxury" and "High-End Lifestyle" niches
-    const systemPrompt = `# Role & Objective
+    // Fallback function for default system prompt (if DB fetch fails)
+    function getDefaultSystemPrompt(): string {
+      return `# Role & Objective
 
 You are an Elite AI Visual Director and Social Media Strategist specializing in the "Black Luxury" and "High-End Lifestyle" niches. Your goal is to engineer the perfect inputs for generative AI models to create hyper-realistic, aspirational AI Influencers.
 
@@ -132,6 +155,8 @@ Hair Color: ${wizardData?.hairColor || 'Not specified'}
 Target Model: ${model}
 
 Advanced Options: ${wizardData ? JSON.stringify(wizardData) : 'None'}
+
+Negative Prompts (User Specified): ${wizardData?.negativePrompts && Array.isArray(wizardData.negativePrompts) && wizardData.negativePrompts.length > 0 ? wizardData.negativePrompts.join(", ") : 'None - generate recommendations based on best practices'}
 
 </user_selections>
 
@@ -223,6 +248,20 @@ Return valid JSON only. Do not include markdown code blocks (\`\`\`json).
     "suggestions": ["String: Tip for the user to improve the result"]
   }
 }`;
+    }
+
+    // Interpolate user data into system prompt template
+    const interpolatedSystemPrompt = systemPrompt
+      .replace(/\${aesthetic\?\.name \|\| aesthetic\?\.id \|\| 'Not specified'}/g, aesthetic?.name || aesthetic?.id || 'Not specified')
+      .replace(/\${shotType\?\.name \|\| shotType\?\.id \|\| 'Not specified'}/g, shotType?.name || shotType?.id || 'Not specified')
+      .replace(/\${wardrobe\?\.name \|\| wardrobe\?\.id \|\| 'Not specified'}/g, wardrobe?.name || wardrobe?.id || 'Not specified')
+      .replace(/\${wizardData\?\.format \|\| 'image'}/g, wizardData?.format || 'image')
+      .replace(/\${wizardData\?\.race \|\| 'African American \(default\)'}/g, wizardData?.race || 'African American (default)')
+      .replace(/\${wizardData\?\.skinTone \|\| 'Not specified'}/g, wizardData?.skinTone || 'Not specified')
+      .replace(/\${wizardData\?\.hairColor \|\| 'Not specified'}/g, wizardData?.hairColor || 'Not specified')
+      .replace(/\${model}/g, model)
+      .replace(/\${wizardData \? JSON\.stringify\(wizardData\) : 'None'}/g, wizardData ? JSON.stringify(wizardData) : 'None')
+      .replace(/\${wizardData\?\.negativePrompts && Array\.isArray\(wizardData\.negativePrompts\) && wizardData\.negativePrompts\.length > 0 \? wizardData\.negativePrompts\.join\(", "\) : 'None - generate recommendations based on best practices'}/g, wizardData?.negativePrompts && Array.isArray(wizardData.negativePrompts) && wizardData.negativePrompts.length > 0 ? wizardData.negativePrompts.join(", ") : 'None - generate recommendations based on best practices');
 
     // Call OpenAI API
     console.log("📞 Calling OpenAI API...");
@@ -232,17 +271,24 @@ Return valid JSON only. Do not include markdown code blocks (\`\`\`json).
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Create an optimized, sanitized prompt from this input: "${promptText}"\n\nInclude all the user selections and ensure it's ready for ${model} image generation.` },
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-        response_format: { type: "json_object" },
-      }),
-    });
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: interpolatedSystemPrompt },
+            { role: "user", content: `Create an optimized, sanitized prompt from this input: "${promptText}"\n\nInclude all the user selections and ensure it's ready for ${model} image generation.` },
+          ],
+          temperature: 0.7,
+          max_tokens: 1500,
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      // Store the generated prompt with system_prompt_id for tracking
+      // TODO: Phase 2 - Save to Supabase prompts table with system_prompt_id
+      // Note: userId would come from authenticated session in Phase 2
+      if (systemPromptId) {
+        console.log(`📊 Using system prompt version ID: ${systemPromptId}`);
+      }
 
     console.log(`📊 OpenAI API response status: ${response.status}`);
 

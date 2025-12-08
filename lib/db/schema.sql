@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS public.prompts (
   faceless_mode BOOLEAN DEFAULT true,
   is_public BOOLEAN DEFAULT false, -- For SEO pages
   slug TEXT, -- For SEO-friendly URLs
+  system_prompt_id UUID REFERENCES public.system_prompts(id), -- Track which system prompt version was used
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -56,6 +57,18 @@ CREATE TABLE IF NOT EXISTS public.prompt_history (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- System prompts table (for version control and tracking)
+CREATE TABLE IF NOT EXISTS public.system_prompts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  version TEXT NOT NULL UNIQUE, -- e.g., "v1.0", "v1.1", "black-luxury-v2"
+  prompt_text TEXT NOT NULL,
+  description TEXT, -- Description of changes/improvements
+  is_active BOOLEAN DEFAULT false, -- Only one should be active at a time
+  created_by UUID REFERENCES auth.users(id), -- Admin who created it
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Row Level Security (RLS) Policies
 
 -- Enable RLS on all tables
@@ -64,6 +77,7 @@ ALTER TABLE public.credits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.prompt_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_prompts ENABLE ROW LEVEL SECURITY;
 
 -- Users: Users can only read/update their own data
 CREATE POLICY "Users can view own data"
@@ -106,6 +120,14 @@ CREATE POLICY "Users can create own history"
   ON public.prompt_history FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+-- System Prompts: All authenticated users can read active system prompt
+CREATE POLICY "Users can view active system prompt"
+  ON public.system_prompts FOR SELECT
+  USING (is_active = true);
+
+-- System Prompts: Only admins can create/update (using service role in API routes)
+-- RLS will be bypassed using service role key for admin operations
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_credits_user_id ON public.credits(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON public.subscriptions(user_id);
@@ -113,4 +135,6 @@ CREATE INDEX IF NOT EXISTS idx_prompts_user_id ON public.prompts(user_id);
 CREATE INDEX IF NOT EXISTS idx_prompts_public ON public.prompts(is_public) WHERE is_public = true;
 CREATE INDEX IF NOT EXISTS idx_prompts_slug ON public.prompts(slug) WHERE slug IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_prompt_history_user_id ON public.prompt_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_system_prompts_active ON public.system_prompts(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_prompts_system_prompt_id ON public.prompts(system_prompt_id);
 
