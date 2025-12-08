@@ -49,6 +49,11 @@ export async function POST(request: NextRequest) {
           issues: [],
           suggestions: [],
         },
+        _debug: {
+          openaiCalled: false,
+          reason: "OPENAI_API_KEY not configured",
+          usingFallback: true,
+        },
       });
     }
 
@@ -367,26 +372,34 @@ Please create a highly detailed, specific prompt that incorporates all of these 
 
     // Call OpenAI API
     console.log("📞 Calling OpenAI API...");
+    console.log("🌐 OpenAI API URL: https://api.openai.com/v1/chat/completions");
     console.log("📝 System prompt length:", interpolatedSystemPrompt.length);
+    console.log("📝 System prompt (full):", interpolatedSystemPrompt);
     console.log("📝 User message length:", userMessage.length);
+    console.log("📝 User message (full):", userMessage);
     console.log("📝 Model:", model);
+    console.log("🔑 API Key present:", apiKey ? `Yes (${apiKey.substring(0, 7)}...)` : "No");
     
+    const requestBody = {
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: interpolatedSystemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+      response_format: { type: "json_object" },
+    };
+    console.log("📤 Request body being sent to OpenAI:", JSON.stringify(requestBody, null, 2));
+    
+    const openaiStartTime = Date.now();
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: interpolatedSystemPrompt },
-          { role: "user", content: userMessage },
-        ],
-        temperature: 0.7,
-        max_tokens: 2000, // Increased for more detailed responses
-        response_format: { type: "json_object" },
-      }),
+      body: JSON.stringify(requestBody),
     });
 
       // Store the generated prompt with system_prompt_id for tracking
@@ -396,37 +409,48 @@ Please create a highly detailed, specific prompt that incorporates all of these 
         console.log(`📊 Using system prompt version ID: ${systemPromptId}`);
       }
 
+    const openaiDuration = Date.now() - openaiStartTime;
     console.log(`📊 OpenAI API response status: ${response.status}`);
+    console.log(`⏱️ OpenAI API call duration: ${openaiDuration}ms`);
 
     if (!response.ok) {
       const error = await response.text();
       console.error("❌ OpenAI API error:", error);
+      console.error("❌ OpenAI API error status:", response.status);
       throw new Error(`OpenAI API error: ${error}`);
     }
 
     console.log("✅ OpenAI API call successful");
+    console.log("✅ Response received from OpenAI, parsing...");
 
     const data = await response.json();
     console.log("📦 OpenAI response received, parsing content...");
+    console.log("📦 Full OpenAI API response structure:", JSON.stringify(data, null, 2).substring(0, 500));
     
     let content;
+    let rawOpenAIResponse: string;
     try {
-      const rawContent = data.choices[0].message.content;
-      console.log("📄 Raw content length:", rawContent.length);
-      console.log("📄 Raw content preview:", rawContent.substring(0, 200));
+      rawOpenAIResponse = data.choices[0].message.content;
+      console.log("📄 Raw OpenAI content length:", rawOpenAIResponse.length);
+      console.log("📄 Raw OpenAI content (full):", rawOpenAIResponse);
       
       // Try to parse JSON (handle markdown code blocks if present)
-      const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) || rawContent.match(/(\{[\s\S]*\})/);
+      const jsonMatch = rawOpenAIResponse.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) || rawOpenAIResponse.match(/(\{[\s\S]*\})/);
       if (jsonMatch) {
         content = JSON.parse(jsonMatch[1]);
       } else {
-        content = JSON.parse(rawContent);
+        content = JSON.parse(rawOpenAIResponse);
       }
       console.log("✅ Successfully parsed OpenAI response");
-      console.log("📋 Generated prompt preview:", content.refinedPrompt?.substring(0, 100));
+      console.log("📋 Parsed content (full):", JSON.stringify(content, null, 2));
+      console.log("📋 Generated prompt:", content.refinedPrompt);
+      console.log("📋 Negative prompt:", content.negativePrompt);
+      console.log("📋 Recommended negative prompts:", content.recommendedNegativePrompts);
+      console.log("📋 Hooks:", content.hooks);
+      console.log("📋 Audio:", content.audio);
     } catch (parseError: any) {
       console.error("❌ Error parsing OpenAI response:", parseError);
-      console.error("Raw content:", data.choices[0].message.content);
+      console.error("Raw content:", rawOpenAIResponse);
       throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
     }
 
@@ -439,7 +463,7 @@ Please create a highly detailed, specific prompt that incorporates all of these 
       skinTone: wizardData?.skinTone,
     });
 
-    return NextResponse.json({
+    const responseData = {
       prompt: content.refinedPrompt || promptText,
       negativePrompt: content.negativePrompt || "",
       recommendedNegativePrompts: content.recommendedNegativePrompts || [],
@@ -450,7 +474,19 @@ Please create a highly detailed, specific prompt that incorporates all of these 
       ],
       audio: content.audio || "Just a Girl - No Doubt",
       sanityCheck,
-    });
+      _debug: {
+        openaiCalled: true,
+        model: "gpt-4o",
+        systemPromptId: systemPromptId || null,
+        timestamp: new Date().toISOString(),
+        rawOpenAIResponse: rawOpenAIResponse, // Include full raw response for debugging
+        parsedContent: content, // Include parsed content for debugging
+      },
+    };
+    
+    console.log("📤 Sending response to client:", JSON.stringify(responseData, null, 2).substring(0, 1000));
+    
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Error generating prompt:", error);
     return NextResponse.json(

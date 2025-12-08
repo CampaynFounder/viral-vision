@@ -18,9 +18,16 @@ export default function PortfolioPage() {
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    const stored = localStorage.getItem("promptHistory");
-    if (stored) {
-      setHistory(JSON.parse(stored));
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem("promptHistory");
+      if (stored) {
+        try {
+          setHistory(JSON.parse(stored));
+        } catch (e) {
+          console.error("Error parsing prompt history:", e);
+          setHistory([]);
+        }
+      }
     }
   }, []);
 

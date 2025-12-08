@@ -15,11 +15,16 @@ import { initializeUserCredits } from "@/lib/utils/credits-manager";
 export default function GeneratePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const [userInput, setUserInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [credits, setCredits] = useState(50);
+  const [showTopUp, setShowTopUp] = useState(false);
 
   // Redirect to auth if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/auth");
+      return;
     }
   }, [user, authLoading, router]);
 
@@ -34,12 +39,12 @@ export default function GeneratePage() {
 
   // Don't render if not authenticated (will redirect)
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen bg-alabaster flex items-center justify-center">
+        <div className="text-mocha">Redirecting...</div>
+      </div>
+    );
   }
-  const [userInput, setUserInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [credits, setCredits] = useState(50);
-  const [showTopUp, setShowTopUp] = useState(false);
 
   // Load credits and generation count from Supabase
   useEffect(() => {
@@ -103,7 +108,7 @@ export default function GeneratePage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="heading-luxury text-3xl text-mocha">Design Your Content</h1>
-            {credits === 0 && (
+            {typeof window !== 'undefined' && credits === 0 && (
               <p className="text-sm text-mocha-light mt-1">
                 Demo mode: {3 - parseInt(localStorage.getItem("demoCount") || "0", 10)} free generations left
               </p>

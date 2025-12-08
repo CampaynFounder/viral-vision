@@ -211,6 +211,30 @@ export default function RefinePage() {
       if (!response.ok) throw new Error("Generation failed");
       
       const result = await response.json();
+      
+      // Debug: Log OpenAI call status and full response
+      console.log("📥 Full API Response received:", result);
+      
+      if (result._debug) {
+        if (result._debug.openaiCalled) {
+          console.log("✅ OpenAI API was called successfully");
+          console.log("📊 OpenAI Model:", result._debug.model);
+          console.log("🕐 Timestamp:", result._debug.timestamp);
+          console.log("📄 Raw OpenAI Response:", result._debug.rawOpenAIResponse);
+          console.log("📋 Parsed OpenAI Content:", result._debug.parsedContent);
+          console.log("📝 Final Prompt:", result.prompt);
+          console.log("🚫 Negative Prompt:", result.negativePrompt);
+          console.log("🎣 Hooks:", result.hooks);
+          console.log("🎵 Audio:", result.audio);
+        } else {
+          console.warn("⚠️ OpenAI API was NOT called");
+          console.warn("📋 Reason:", result._debug.reason);
+          console.warn("🔄 Using fallback response");
+        }
+      } else {
+        console.log("ℹ️ No debug info available (older API version)");
+      }
+      
       setSanityCheckResult(result.sanityCheck);
       
       // Store recommended negative prompts and auto-accept them
@@ -248,6 +272,10 @@ export default function RefinePage() {
           openaiAudio: result.audio,
           sanityCheck: result.sanityCheck,
           recommendedNegativePrompts: result.recommendedNegativePrompts || [],
+          // Store full OpenAI response for debugging/display
+          openaiFullResponse: result._debug?.rawOpenAIResponse || null,
+          openaiParsedContent: result._debug?.parsedContent || null,
+          openaiDebug: result._debug || null,
         })
       );
       

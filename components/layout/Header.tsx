@@ -29,22 +29,22 @@ export default function Header() {
     
     loadCredits();
     
-    // Listen for credit and tier updates (when user navigates between pages)
-    const handleStorageChange = async () => {
-      // Re-initialize credits to ensure accuracy
-      const userCredits = await initializeUserCredits(user?.id || null);
-      setCredits(userCredits.isUnlimited ? 999 : userCredits.credits);
-      setIsUnlimited(userCredits.isUnlimited);
-      setUserTier(userCredits.userTier);
+    // Only listen for storage changes from other tabs/windows (not same-tab focus)
+    // Removed focus listener to prevent flooding during generation
+    const handleStorageChange = async (e: StorageEvent) => {
+      // Only re-initialize if credits or subscription changed in another tab
+      if (e.key === "credits" || e.key === "subscription" || e.key === "userTier") {
+        const userCredits = await initializeUserCredits(user?.id || null);
+        setCredits(userCredits.isUnlimited ? 999 : userCredits.credits);
+        setIsUnlimited(userCredits.isUnlimited);
+        setUserTier(userCredits.userTier);
+      }
     };
     
     window.addEventListener("storage", handleStorageChange);
-    // Also check on focus (for same-tab updates)
-    window.addEventListener("focus", handleStorageChange);
     
     return () => {
       window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("focus", handleStorageChange);
     };
   }, [pathname, user]); // Re-check when route changes or user changes
 
@@ -190,10 +190,12 @@ export default function Header() {
           {/* Navigation */}
           <nav className="hidden sm:flex items-center gap-6">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
                 hapticLight();
                 router.push("/generate");
               }}
+              type="button"
               className={`body-luxury text-sm touch-target transition-colors font-semibold ${
                 pathname.startsWith("/generate")
                   ? "text-champagne"
@@ -226,10 +228,12 @@ export default function Header() {
               Dashboard
             </button>
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
                 hapticLight();
                 router.push("/portfolio");
               }}
+              type="button"
               className={`body-luxury text-sm touch-target transition-colors font-semibold ${
                 pathname === "/portfolio"
                   ? "text-champagne"
@@ -302,10 +306,12 @@ export default function Header() {
         {/* Mobile Navigation */}
         <nav className="sm:hidden flex items-center justify-between mt-4 pt-4 border-t border-white/20">
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
               hapticLight();
               router.push("/generate");
             }}
+            type="button"
             className={`body-luxury text-xs touch-target font-bold ${
               pathname.startsWith("/generate") ? "text-champagne" : "text-white"
             }`}
@@ -324,10 +330,12 @@ export default function Header() {
             Generate
           </button>
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
               hapticLight();
               router.push("/portfolio");
             }}
+            type="button"
             className={`body-luxury text-xs touch-target font-bold ${
               pathname === "/portfolio" ? "text-champagne" : "text-white"
             }`}

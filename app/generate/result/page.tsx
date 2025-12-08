@@ -26,6 +26,8 @@ export default function ResultPage() {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [totalGenerations, setTotalGenerations] = useState(0);
+  const [showOpenAIResponse, setShowOpenAIResponse] = useState(false);
+  const [openAIResponseData, setOpenAIResponseData] = useState<any>(null);
 
   useEffect(() => {
     // Load credits and generation count
@@ -57,12 +59,37 @@ export default function ResultPage() {
 
     const parsed = JSON.parse(data);
 
+    // Debug: Log what we received
+    console.log("📥 Generation data from sessionStorage:", parsed);
+    console.log("📝 OpenAI Prompt:", parsed.openaiPrompt);
+    console.log("🚫 OpenAI Negative Prompt:", parsed.openaiNegativePrompt);
+    console.log("🎣 OpenAI Hooks:", parsed.openaiHooks);
+    console.log("🎵 OpenAI Audio:", parsed.openaiAudio);
+    console.log("📄 OpenAI Full Response:", parsed.openaiFullResponse);
+    console.log("📋 OpenAI Parsed Content:", parsed.openaiParsedContent);
+    console.log("🔍 OpenAI Debug Info:", parsed.openaiDebug);
+
     // Check if we have OpenAI-generated prompt
     if (parsed.openaiPrompt) {
       setPrompt(parsed.openaiPrompt);
       setNegativePrompt(parsed.openaiNegativePrompt || "");
       setHooks(parsed.openaiHooks || []);
       setAudio(parsed.openaiAudio || "");
+      
+      // Store OpenAI response data for display
+      if (parsed.openaiDebug || parsed.openaiFullResponse || parsed.openaiParsedContent) {
+        setOpenAIResponseData({
+          rawResponse: parsed.openaiFullResponse,
+          parsedContent: parsed.openaiParsedContent,
+          debug: parsed.openaiDebug,
+        });
+      }
+      
+      // Log that we're using OpenAI data
+      console.log("✅ Using OpenAI-generated content");
+      if (parsed.openaiDebug?.openaiCalled) {
+        console.log("✅ OpenAI was called - showing OpenAI response");
+      }
     } else if (parsed.formattedPrompt) {
       // Check if we have enhanced formatted prompt from wizard
       setFormattedPrompt(parsed.formattedPrompt);
@@ -212,6 +239,57 @@ export default function ResultPage() {
             }
           }}
         />
+
+        {/* OpenAI Response Debug Section */}
+        {openAIResponseData && (
+          <div className="mt-6 bg-white rounded-xl border-2 border-stone-200 p-4">
+            <button
+              onClick={() => setShowOpenAIResponse(!showOpenAIResponse)}
+              className="w-full flex items-center justify-between text-left mb-2"
+            >
+              <h3 className="text-sm font-semibold text-mocha-dark">
+                🔍 OpenAI Response Debug
+              </h3>
+              <span className="text-xs text-mocha-light">
+                {showOpenAIResponse ? "▼ Hide" : "▶ Show"}
+              </span>
+            </button>
+            
+            {showOpenAIResponse && (
+              <div className="space-y-4 mt-4">
+                {/* Debug Info */}
+                {openAIResponseData.debug && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-mocha-dark mb-2">Debug Info:</h4>
+                    <pre className="text-xs bg-stone-50 p-3 rounded overflow-auto max-h-40">
+                      {JSON.stringify(openAIResponseData.debug, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Parsed Content */}
+                {openAIResponseData.parsedContent && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-mocha-dark mb-2">Parsed OpenAI Content:</h4>
+                    <pre className="text-xs bg-stone-50 p-3 rounded overflow-auto max-h-60">
+                      {JSON.stringify(openAIResponseData.parsedContent, null, 2)}
+                    </pre>
+                  </div>
+                )}
+
+                {/* Raw Response */}
+                {openAIResponseData.rawResponse && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-mocha-dark mb-2">Raw OpenAI Response:</h4>
+                    <pre className="text-xs bg-stone-50 p-3 rounded overflow-auto max-h-60 whitespace-pre-wrap">
+                      {openAIResponseData.rawResponse}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="mt-6 space-y-3">
